@@ -1,0 +1,15 @@
+{:deps
+ {org.clojure/clojure {:mvn/version "1.9.0"}}
+
+ :aliases
+ {:test
+  {:extra-paths ["test"]
+   :extra-deps
+   {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                               :sha "5f2b5c2efb444df76fb5252102b33f542ebf7f58"}}
+   :main-opts ["-m" "cognitect.test-runner"]}
+  :uberjar
+  {:extra-deps
+   {pack/pack.alpha {:git/url "https://github.com/juxt/pack.alpha.git"
+                     :sha     "14e821006ac36cc7f2c7d0be83d4cb9e59fa308a"}}
+   :main-opts ["-m" "mach.pack.alpha.capsule" "-m" "mon-compte-connector.core" "-e" "src" "-d" "deps.edn" "dist/mon-compte-connector.jar"]}}}
