@@ -1,7 +1,19 @@
 (ns mon-compte-connector.core-test
-  (:require [clojure.test :as t]
-            [mon-compte-connector.core :as sut]))
+  (:require [clojure.test :refer :all]
+            [ring.mock.request :as mock]
+            [mon-compte-connector.core :refer [app]]))
 
-(t/deftest basic-tests
-  (t/testing "it says hello to everyone"
-    (t/is (= (with-out-str (sut/-main)) "Hello, World!\n"))))
+(deftest test-app
+  (testing "foo route"
+    (let [response (app (mock/request :get "/foo"))]
+      (is (= (:status response) 200))
+      (is (= (:body response) "Hello Foo"))))
+
+  (testing "bar route"
+    (let [response (app (mock/request :get "/bar"))]
+      (is (= (:status response) 200))
+      (is (= (:body response) "Hello Bar"))))
+
+  (testing "not-found route"
+    (let [response (app (mock/request :get "/invalid"))]
+      (is (= (:status response) 404)))))

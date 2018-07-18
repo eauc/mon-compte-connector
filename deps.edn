@@ -1,12 +1,19 @@
-{:deps
- {org.clojure/clojure {:mvn/version "1.9.0"}}
+{:mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
+             "clojars" {:url "https://repo.clojars.org/"}}
+ :deps
+ {org.clojure/clojure {:mvn/version "1.9.0"}
+  ring/ring-core {:mvn/version "1.6.3"}
+  ring/ring-jetty-adapter {:mvn/version "1.6.3"}
+  ring/ring-defaults {:mvn/version "0.3.2"}
+  compojure {:mvn/version "1.6.1"}}
 
  :aliases
  {:test
   {:extra-paths ["test"]
    :extra-deps
    {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                               :sha "5f2b5c2efb444df76fb5252102b33f542ebf7f58"}}
+                               :sha "5f2b5c2efb444df76fb5252102b33f542ebf7f58"}
+    ring/ring-mock {:mvn/version "0.3.2"}}
    :main-opts ["-m" "cognitect.test-runner"]}
   :uberjar
   {:extra-deps
