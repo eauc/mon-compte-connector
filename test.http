@@ -1,0 +1,8 @@
+:user_mail = user1@myDomain.com
+:user_pass = Password1
+:user_basic = dXNlcjFAbXlEb21haW4uY29tOlBhc3NvcmQx
+
+# Create token
+
+GET http://localhost:3000/token
+Authorization: Basic :user_basic
