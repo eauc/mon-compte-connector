@@ -8,13 +8,17 @@
   compojure {:mvn/version "1.6.1"}}
 
  :aliases
- {:test
+ {:repl
+  {:extra-deps
+   {org.clojure/tools.nrepl {:mvn/version "0.2.12"}
+    cider/cider-nrepl {:mvn/version "0.17.0"}
+    refactor-nrepl {:mvn/version "2.4.0-SNAPSHOT"}
+    acyclic/squiggly-clojure {:mvn/version "0.1.9-SNAPSHOT"}}
+   :main-opts ["-m" "mon-compte-connector.repl"]}
+  :test
   {:extra-paths ["test"]
-   :extra-deps
-   {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                               :sha "5f2b5c2efb444df76fb5252102b33f542ebf7f58"}
-    ring/ring-mock {:mvn/version "0.3.2"}}
-   :main-opts ["-m" "cognitect.test-runner"]}
+   :extra-deps {eftest {:mvn/version "0.5.2"}
+                ring/ring-mock {:mvn/version "0.3.2"}}}
   :uberjar
   {:extra-deps
    {pack/pack.alpha {:git/url "https://github.com/juxt/pack.alpha.git"
