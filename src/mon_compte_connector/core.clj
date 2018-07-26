@@ -1,5 +1,5 @@
 (ns mon-compte-connector.core
-  (:require [mon-compte-connector.app :refer [init]]))
+  (:gen-class))
 
-(defn -main [config-file-path]
-  (init config-file-path))
+(defn -main [& args]
+  (println "Welcome to my project! These are your args:" args))
