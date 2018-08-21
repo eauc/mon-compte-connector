@@ -1,14 +1,15 @@
 (ns mon-compte-connector.ldap
-  (:import com.unboundid.ldap.sdk.Filter
-           com.unboundid.ldap.sdk.LDAPException)
-  (:require [clj-ldap.client :as ldap]))
+  (:import com.unboundid.ldap.sdk.Filter)
+  (:require [clojure.tools.logging :as log]
+            [clj-ldap.client :as ldap]))
 
 
 (defn catch-error
   [fn & args]
   (try
     [(apply fn args) nil]
-    (catch LDAPException e
+    (catch Exception e
+      (log/error e "LDAP request error")
       [nil [(.getMessage e)]])))
 
 
@@ -27,7 +28,7 @@
 
 (defn search
   [{:keys [base-dn] :as options} conn]
-  (catch-error ldap/search conn base-dn (dissoc options :base-dn)))
+  (catch-error #(or (ldap/search conn base-dn (dissoc options :base-dn)) '())))
 
 
 (defn modify
