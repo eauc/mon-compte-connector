@@ -4,6 +4,7 @@
             [clj-ldap.client :as ldap]))
 
 
+
 (defn catch-error
   [fn & args]
   (try
@@ -13,30 +14,8 @@
       [nil [(.getMessage e)]])))
 
 
+
 (def connect (partial catch-error ldap/connect))
-
-
-(defn bind?
-  [{:keys [dn pwd]} conn]
-  (catch-error ldap/bind? conn dn pwd))
-
-
-(defn get
-  [{:keys [dn attributes]} conn]
-  (catch-error ldap/get conn dn attributes))
-
-
-(defn search
-  [{:keys [base-dn] :as options} conn]
-  (catch-error #(or (ldap/search conn base-dn (dissoc options :base-dn)) '())))
-
-
-(defn modify
-  [{:keys [dn] :as options} conn]
-  (catch-error ldap/modify conn dn (dissoc options :dn)))
-
-
-
 
 (comment
   (def config {:host {:address "localhost"
@@ -47,10 +26,26 @@
                :bind-dn "cn=admin,dc=amaris,dc=ovh"
                :password "KLD87cvU"})
   (def conn (first (connect config)))
+  )
 
+
+
+(defn bind?
+  [{:keys [dn pwd]} conn]
+  (catch-error ldap/bind? conn dn pwd))
+
+(comment
   (bind? {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh" :pwd "Password14"} conn)
   ;; => [true nil]
+  )
 
+
+
+(defn get
+  [{:keys [dn attributes]} conn]
+  (catch-error ldap/get conn dn attributes))
+
+(comment
   (get {:dn "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"} conn)
   ;; => [{:pwdExpireWarning "60",
   ;;      :objectClass #{"device" "top" "pwdPolicyChecker" "pwdPolicy"},
@@ -81,7 +76,15 @@
   ;;      :userPassword "{SSHA}sb2T5cm4Xf9YNDLnNouqmDcrLFohWBK4",
   ;;      :mobile "+3312345678"}
   ;;     nil]
+  )
 
+
+
+(defn search
+  [{:keys [base-dn] :as options} conn]
+  (catch-error #(or (ldap/search conn base-dn (dissoc options :base-dn)) '())))
+
+(comment
   (search {:base-dn "dc=amaris,dc=ovh"
            :filter (Filter/createEqualityFilter "objectclass" "person")
            :attributes [:uid :description :mail :mobile :userPassword :pwdChangedTime :pwdReset]} conn)
@@ -114,11 +117,23 @@
   ;;       :userPassword "{SSHA}sb2T5cm4Xf9YNDLnNouqmDcrLFohWBK4",
   ;;       :mobile "+3312345678"})
   ;;     nil]
+  )
 
+
+
+(defn modify
+  [{:keys [dn] :as options} conn]
+  (catch-error ldap/modify conn dn (dissoc options :dn)))
+
+(comment
   (modify {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
            :replace {:userPassword "hello"}} conn)
   ;; => [{:code 0, :name "success"} nil]
+  )
 
+
+
+(comment
   (def single-conn (.getConnection conn))
 
   (bind? {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh" :pwd "hello"} single-conn)
