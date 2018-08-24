@@ -41,7 +41,7 @@
   ;;      :pwd-max-age "7200",
   ;;      :pwd-expiration-date "2018-08-21T12:55:06Z"}
   ;;     nil]
-  
+
   )
 
 
@@ -87,7 +87,7 @@
   ;;      :pwd-max-age 7200,
   ;;      :pwd-expiration-date "2018-08-22T21:09:46Z"}
   ;;     nil]
-  
+
   )
 
 
@@ -104,7 +104,7 @@
          (user (dir/user-mail-filter directory mail))
          (check-user-auth pwd @conn)))
 
-(comment  
+(comment
   (dir/authenticated-user directory "toto@acme.com" "Password1")
   ;; => [nil ["user not found"]]
 
@@ -121,7 +121,7 @@
   ;;      :pwd-max-age 7200,
   ;;      :pwd-expiration-date "2018-08-22T23:17:17Z"}
   ;;     nil]
-  
+
   )
 
 
@@ -138,19 +138,70 @@
            (user-with-pwd-expiration-date directory))))
 
 (comment
-  (user-pwd-reset directory "toto@acme.com" "hello")
+  (dir/user-pwd-reset directory "toto@acme.com" "hello")
   ;; => [nil ["user not found"]]
 
-  (user-pwd-reset directory mail "hello")
-;; => [{:uid "JohnD",
-;;      :description "This is John Doe's description",
-;;      :mail "user1@myDomain.com",
-;;      :phone "+3312345678",
-;;      :pwd-changed-time "2018-08-24T14:51:50Z",
-;;      :pwd-max-age 7200,
-;;      :pwd-expiration-date "2018-08-24T16:51:50Z"}
-;;     nil]
-  
+  (dir/user-pwd-reset directory mail "hello")
+  ;; => [{:uid "JohnD",
+  ;;      :description "This is John Doe's description",
+  ;;      :mail "user1@myDomain.com",
+  ;;      :phone "+3312345678",
+  ;;      :pwd-changed-time "2018-08-24T14:51:50Z",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-24T16:51:50Z"}
+  ;;     nil]
+
+  )
+
+
+(defn user-connection
+  [{:keys [dn] :as user} pwd pool]
+  (let [conn (.getConnection pool)
+        ok? (error/result (ldap/bind? {:dn dn :pwd pwd} conn))]
+    (if ok?
+      (->result [user conn])
+      (->errors ["invalid credentials"]))))
+
+(defn pwd-update
+  [[user user-conn] {:keys [schema conn]} new-pwd]
+  (let [user-schema (:user schema)
+        result (err-> user
+                      (p/reset-query user-schema new-pwd)
+                      (ldap/modify user-conn)
+                      (#(->result (:post-read %)))
+                      (u/map-attributes user-schema))]
+    (.releaseAndReAuthenticateConnection @conn user-conn)
+    result))
+
+(defn user-pwd-update
+  [{:keys [conn schema] :as directory} mail pwd new-pwd]
+  (let [user-schema (:user schema)]
+    (err-> directory
+           (user (dir/user-mail-filter directory mail))
+           (user-connection pwd @conn)
+           (pwd-update directory new-pwd)
+           (user-with-pwd-expiration-date directory))))
+
+(comment
+  (dir/user-pwd-update directory "toto@acme.com" "hello" "Password11")
+  ;; => [nil ["user not found"]]
+
+  (dir/user-pwd-update directory mail "hello" "bouh")
+  ;; => [nil ["invalid credentials"]]
+
+  (dir/user-pwd-update directory mail "Password11" "bouh")
+  ;; => [nil ["Password fails quality checking policy"]]
+
+  (dir/user-pwd-update directory mail "Password12" "Password13")
+  ;; => [{:uid "JohnD",
+  ;;      :description "This is John Doe's description",
+  ;;      :mail "user1@myDomain.com",
+  ;;      :phone "+3312345678",
+  ;;      :pwd-changed-time "2018-08-24T18:34:48Z",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-24T20:34:48Z"}
+  ;;     nil]
+
   )
 
 
@@ -160,7 +211,9 @@
   (dir/user-mail-filter [this mail] (f/user-mail (get-in this [:schema :user]) mail))
   (dir/user-uid-filter [this uid] (f/user-uid (get-in this [:schema :user]) uid))
   (dir/user [this filter] (user this filter))
-  (dir/authenticated-user [this mail pwd] (authenticated-user this mail pwd)))
+  (dir/authenticated-user [this mail pwd] (authenticated-user this mail pwd))
+  (dir/user-pwd-reset [this mail new-pwd] (user-pwd-reset this mail new-pwd))
+  (dir/user-pwd-update [this mail pwd new-pwd] (user-pwd-update this mail pwd new-pwd)))
 
 (defn make-ldap-directory
   [config schema]
