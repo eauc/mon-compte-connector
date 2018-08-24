@@ -17,25 +17,28 @@
        :description :description,
        :mail :mail,
        :phone :mobile,
-       :pwdChangedTime :pwdChangedTime}
+       :pwd-changed-time :pwdChangedTime
+       :pwd-policy :pwdPolicySubentry}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; schema
       {:objectclass "person"
        :attributes {:uid "-id"
                     :description "-desc"
                     :mail "-email"
                     :phone "-phone"
-                    :pwdChangedTime "-pwdChanged"
+                    :pwd-changed-time "-pwdChanged"
+                    :pwd-policy "-pwdPolicySubentry"
                     :password "-password"}}
       ;; attrs
       {:uid :-id
        :description :-desc,
        :mail :-email,
        :phone :-phone,
-       :pwdChangedTime :-pwdChanged}
+       :pwd-changed-time :-pwdChanged
+       :pwd-policy :-pwdPolicySubentry}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; schema
       {:objectclass "person"
        :attributes {}}
@@ -44,7 +47,8 @@
        :description :description,
        :mail :mail,
        :phone :phone,
-       :pwdChangedTime :pwdChangedTime}))
+       :pwd-changed-time :pwdChangedTime
+       :pwd-policy :pwdPolicySubentry}))
 
 
   (testing "user-map-attributes"
@@ -55,7 +59,8 @@
        :description "user-desc",
        :mail "user-mail",
        :phone "user-changed",
-       :pwdChangedTime "user-date"}
+       :pwdChangedTime "user-date"
+       :pwdPolicySubentry "cn=pwdPolicy,dn=org,dn=com"}
       ;; schema
       {:objectclass "person"
        :attributes {}}
@@ -64,36 +69,41 @@
        :description "user-desc",
        :mail "user-mail",
        :phone "user-changed",
-       :pwdChangedTime "user-date"}
+       :pwd-changed-time "user-date"
+       :pwd-policy "cn=pwdPolicy,dn=org,dn=com"}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; raw-user
       {:-id "user-uid"
        :-desc "user-desc",
        :-email "user-mail",
        :-phone "user-changed",
-       :-pwdChanged "user-date"}
+       :-pwdChanged "user-date"
+       :-pwdPolicy "cn=pwdPolicy,dn=org,dn=com"}
       ;; schema
       {:objectclass "person"
        :attributes {:uid "-id"
                     :description "-desc"
                     :mail "-email"
                     :phone "-phone"
-                    :pwdChangedTime "-pwdChanged"}}
+                    :pwd-changed-time "-pwdChanged"
+                    :pwd-policy "-pwdPolicy"}}
       ;; user
       {:uid "user-uid"
        :description "user-desc",
        :mail "user-mail",
        :phone "user-changed",
-       :pwdChangedTime "user-date"}
+       :pwd-changed-time "user-date"
+       :pwd-policy "cn=pwdPolicy,dn=org,dn=com"}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; raw-user
       {:uid "user-uid"
        :description "user-desc",
        :mail "user-mail",
        :mobile "user-changed",
-       :pwdChangedTime "user-date"}
+       :pwdChangedTime "user-date"
+       :pwdPolicySubentry "cn=pwdPolicy,dn=org,dn=com"}
       ;; schema
       {:objectclass "person"
        :attributes {:phone "mobile"}}
@@ -102,7 +112,8 @@
        :description "user-desc",
        :mail "user-mail",
        :phone "user-changed",
-       :pwdChangedTime "user-date"}))
+       :pwd-changed-time "user-date"
+       :pwd-policy "cn=pwdPolicy,dn=org,dn=com"}))
 
 
   (testing "user-mail-filter"
@@ -113,11 +124,11 @@
       {:objectclass "person"
        :attributes {}}
       ;; mail
-      "toto@acme.com" 
+      "toto@acme.com"
       ;; filter
       "(&(objectclass=person)(mail=toto@acme.com))"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; schema
       {:objectclass "user"
        :attributes {:objectclass "class"
@@ -138,7 +149,7 @@
       ;; uid filter
       "userUid" "(uid=userUid)"
 ;;;;;;;;;;;;;;;;;;;;;
-       
+
       ;; schema
       {:objectclass "user"
        :attributes {:objectclass "class"
@@ -161,10 +172,10 @@
       user-uid-filter "userUid"
       ;; query
       {:base-dn "dc=amaris,dc=ovh",
-       :attributes [:uid :description :mail :phone :pwdChangedTime],
+       :attributes [:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry],
        :filter "(uid=userUid)"}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; directory
       {:config {:users-base-dn "dc=lvmh,dc=com"}
        :schema {:user {:objectclass "user"
@@ -173,7 +184,7 @@
       user-mail-filter "user1@lvmh.com"
       ;; query
       {:base-dn "dc=lvmh,dc=com",
-       :attributes [:uid :desc :email :phone :pwdChangedTime],
+       :attributes [:uid :desc :email :phone :pwdChangedTime :pwdPolicySubentry],
        :filter "(&(objectclass=user)(email=user1@lvmh.com))"}))
 
 
@@ -186,7 +197,7 @@
       ;; result
       [{:uid "userUid"} nil]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-      
+
       ;; users
       []
       ;; result
@@ -204,9 +215,9 @@
       ;; new-pwd
       "hello"
       ;; query
-      {:dn "cn=Toto,dc=amaris,dc=ovh",            
+      {:dn "cn=Toto,dc=amaris,dc=ovh",
        :replace {:userPassword "hello"},
-       :post-read '(:uid :description :mail :phone :pwdChangedTime)}
+       :post-read '(:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry)}
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; user
@@ -218,6 +229,163 @@
       ;; new-pwd
       "hello"
       ;; query
-      {:dn "cn=Toto,dc=amaris,dc=ovh",            
+      {:dn "cn=Toto,dc=amaris,dc=ovh",
        :replace {:-password "hello"},
-       :post-read '(:-id :description :-mail :phone :pwdChangedTime)})))
+       :post-read '(:-id :description :-mail :phone :pwdChangedTime :pwdPolicySubentry)}))
+
+
+  (testing "pwd-policy-attributes"
+    (are [schema attrs] (= attrs (pwd-policy-attributes schema))
+
+      ;; schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {:pwd-max-age "-pwdMaxAge"}}
+      ;; attrs
+      {:pwd-max-age :-pwdMaxAge}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {}}
+      ;; attrs
+      {:pwd-max-age :pwdMaxAge}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ))
+
+
+  (testing "pwd-policy-map-attributes"
+    (are [raw-policy schema policy] (= policy (first (pwd-policy-map-attributes raw-policy schema)))
+
+      ;; raw-policy
+      {:-pwdMaxAge "7200"}
+      ;; schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {:pwd-max-age "-pwdMaxAge"}}
+      ;; policy
+      {:pwd-max-age "7200"}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; raw-policy
+      {:pwdMaxAge "7200"}
+      ;; schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {}}
+      ;; policy
+      {:pwd-max-age "7200"}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ))
+
+
+  (testing "pwd-policy-query"
+    (are [user config policy-schema query] (= query (pwd-policy-query user config policy-schema))
+
+      ;; user
+      {}
+      ;; config
+      {}
+      ;; policy-schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {}}
+      ;; query
+      [nil ["missing password policy"]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; user
+      {}
+      ;; config
+      {:default-pwd-policy "cn=defaultPwdPolicy,dc=org,dc=com"}
+      ;; policy-schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {}}
+      ;; query
+      [{:dn "cn=defaultPwdPolicy,dc=org,dc=com" :attributes `(:pwdMaxAge)} nil]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; user
+      {:pwd-policy "cn=pwdPolicy,dc=org,dc=com"}
+      ;; config
+      {:default-pwd-policy "cn=defaultPwdPolicy,dc=org,dc=com"}
+      ;; policy-schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {:pwd-max-age "-pwdMaxAge"}}
+      ;; query
+      [{:dn "cn=pwdPolicy,dc=org,dc=com" :attributes `(:-pwdMaxAge)} nil]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ))
+
+
+  (testing "pwd-expiration-date"
+    (are [policy user policy-schema date] (= date (pwd-expiration-date policy user policy-schema))
+
+      ;; policy
+      {}
+      ;; user
+      {}
+      ;; policy-schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {}}
+      ;; date
+      [nil ["invalid pwd expiration date"]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; policy
+      {:pwd-max-age "invalid"}
+      ;; user
+      {:pwd-changed-time "20180817191155Z"}
+      ;; policy-schema
+      {:attributes {}}
+      ;; date
+      [nil ["invalid pwd expiration date"]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; policy
+      {:pwd-max-age "7200"}
+      ;; user
+      {:pwd-changed-time "20180817"}
+      ;; policy-schema
+      {:pwd-changed-time-format "yyyyMMddHHmmssZ"
+       :attributes {}}
+      ;; date
+      [nil ["invalid pwd expiration date"]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; policy
+      {:pwd-max-age "7200"}
+      ;; user
+      {:pwd-changed-time "20180817"}
+      ;; policy-schema
+      {:pwd-changed-time-format "invalid"
+       :attributes {}}
+      ;; date
+      [nil ["invalid pwd expiration date"]]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; policy
+      {:pwd-max-age "7200"}
+      ;; user
+      {:pwd-changed-time "20180817191155Z"}
+      ;; policy-schema
+      {:attributes {}}
+      ;; date
+      [{:pwd-changed-time "2018-08-17T19:11:55Z",
+        :pwd-max-age 7200,
+        :pwd-expiration-date "2018-08-17T21:11:55Z"} nil]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      ;; policy
+      {:pwd-max-age "0"}
+      ;; user
+      {:pwd-changed-time "2018-08-17T19:11:55"}
+      ;; policy-schema
+      {:pwd-changed-time-format "yyyy-MM-dd'T'HH:mm:ss"
+       :attributes {}}
+      ;; date
+      [{:pwd-changed-time "2018-08-17T19:11:55Z",
+        :pwd-max-age 0,
+        :pwd-expiration-date "2018-08-17T19:11:55Z"} nil]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      )))
