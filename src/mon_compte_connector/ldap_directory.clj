@@ -2,7 +2,8 @@
   (:import com.unboundid.ldap.sdk.Filter)
   (:require [clojure.tools.logging :as log]
             [mon-compte-connector.error :as error :refer [->result ->errors err->]]
-            [mon-compte-connector.directory :as dir :refer [Directory]]
+            [mon-compte-connector.directory :as dir :refer [Directory DirectoryFilters]]
+            [mon-compte-connector.directory-pool :as dir-pool :refer [->DirectoryPool]]
             [mon-compte-connector.ldap :as ldap]
             [mon-compte-connector.ldap-directory.filter :as f]
             [mon-compte-connector.ldap-directory.pwd :as p]
@@ -11,14 +12,38 @@
 
 
 (comment
-  (def mail "user1@myDomain.com")
-  (def pwd "Password1")
+  (def domain1 "domain1.com")
+  (def user11 {:mail (str "user11@" domain1)
+               :pwd "Password11"})
+  (def user12 {:mail (str "user12@" domain1)
+               :pwd "Password12"})
+  (def domain2 "domain2.com")
+  (def user21 {:mail (str "user21@" domain2)
+               :pwd "Password21"})
+  (def user22 {:mail (str "user22@" domain2)
+               :pwd "Password22"})
 
   (def user-schema {:object-class "person"
                     :attributes {:description "description"
                                  :mail "mail"
                                  :phone "mobile"
                                  :password "userPassword"}})
+
+  (def domain1dc "dc=domain1,dc=com")
+  (def config1 {:host {:address "localhost"
+                       :port 636}
+                :ssl? true
+                :connect-timeout 1000
+                :timeout 1000
+                :bind-dn (str "cn=admin," domain1dc)
+                :password "ldap1AdminPwd"
+                :users-base-dn (str "ou=Users," domain1dc)
+                :default-pwd-policy (str "cn=passwordDefault,ou=pwpolicies," domain1dc)})
+
+  (def directory (make-directory
+                   {:config config1
+                    :schema {:user user-schema
+                             :pwd-policy {}}}))
   )
 
 
@@ -60,32 +85,54 @@
            (user-with-pwd-expiration-date directory))))
 
 (comment
-  (dir/user directory (dir/user-mail-filter directory "toto@acme.com"))
+  (dir/user directory #(dir/user-mail-filter % "toto@acme.com"))
   ;; => [nil ["user not found"]]
 
-  (dir/user directory (dir/user-mail-filter directory mail))
-  ;; => [{:description "This is John Doe's description",
+  (dir/user directory #(dir/user-mail-filter % (:mail user11)))
+  ;; => [{:description "This is User11's description",
   ;;      :phone "+3312345678",
-  ;;      :uid "JohnD",
-  ;;      :mail "user1@myDomain.com",
-  ;;      :pwd-changed-time "2018-08-22T19:09:46Z",
-  ;;      :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-  ;;      :pwd-max-age "7200",
-  ;;      :pwd-expiration-date "2018-08-22T21:09:46Z"}
+  ;;      :uid "us11",
+  ;;      :mail "user11@domain1.com",
+  ;;      :pwd-changed-time "2018-08-26T12:56:17Z",
+  ;;      :dn "cn=User11,ou=Class1,ou=Users,dc=domain1,dc=com",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-26T14:56:17Z"}
   ;;     nil]
 
-  (dir/user directory (dir/user-uid-filter directory "toto"))
+  (dir/user directory #(dir/user-mail-filter % (:mail user12)))
+  ;; => [{:description "This is User12's description",
+  ;;      :phone "+3387654321",
+  ;;      :uid "us12",
+  ;;      :mail "user12@domain1.com",
+  ;;      :pwd-changed-time "2018-08-26T12:56:17Z",
+  ;;      :dn "cn=User12,ou=Class2,ou=Users,dc=domain1,dc=com",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-26T14:56:17Z"}
+  ;;     nil]
+
+  (dir/user directory #(dir/user-uid-filter % "toto"))
   ;; => [nil ["user not found"]]
 
-  (dir/user directory (dir/user-uid-filter directory "JohnD"))
-  ;; => [{:description "This is John Doe's description",
+  (dir/user directory #(dir/user-uid-filter % "Us11"))
+  ;; => [{:description "This is User11's description",
   ;;      :phone "+3312345678",
-  ;;      :uid "JohnD",
-  ;;      :mail "user1@myDomain.com",
-  ;;      :pwd-changed-time "2018-08-22T19:09:46Z",
-  ;;      :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+  ;;      :uid "us11",
+  ;;      :mail "user11@domain1.com",
+  ;;      :pwd-changed-time "2018-08-26T12:32:29Z",
+  ;;      :dn "cn=User11,ou=Class1,ou=Users,dc=amaris,dc=ovh",
   ;;      :pwd-max-age 7200,
-  ;;      :pwd-expiration-date "2018-08-22T21:09:46Z"}
+  ;;      :pwd-expiration-date "2018-08-26T14:32:29Z"}
+  ;;     nil]
+
+  (dir/user directory #(dir/user-uid-filter % "Us12"))
+  ;; => [{:description "This is User12's description",
+  ;;      :phone "+3387654321",
+  ;;      :uid "us12",
+  ;;      :mail "user12@domain1.com",
+  ;;      :pwd-changed-time "2018-08-26T12:32:29Z",
+  ;;      :dn "cn=User12,ou=Class2,ou=Users,dc=amaris,dc=ovh",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-26T14:32:29Z"}
   ;;     nil]
 
   )
@@ -108,18 +155,32 @@
   (dir/authenticated-user directory "toto@acme.com" "Password1")
   ;; => [nil ["user not found"]]
 
-  (dir/authenticated-user directory mail "toto")
+  (dir/authenticated-user directory (:mail user11) "toto")
   ;; => [nil ("invalid credentials")]
 
-  (dir/authenticated-user directory mail pwd)
-  ;; => [{:description "This is John Doe's description",
+  (dir/authenticated-user directory (:mail user12) pwd11)
+  ;; => [nil ["invalid credentials"]]
+
+  (dir/authenticated-user directory (:mail user11) (:pwd user11))
+  ;; => [{:description "This is User11's description",
   ;;      :phone "+3312345678",
-  ;;      :uid "JohnD",
-  ;;      :mail "user1@myDomain.com",
-  ;;      :pwd-changed-time "2018-08-22T21:17:17Z",
-  ;;      :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+  ;;      :uid "us11",
+  ;;      :mail "user11@domain1.com",
+  ;;      :pwd-changed-time "2018-08-26T12:32:29Z",
+  ;;      :dn "cn=User11,ou=Class1,ou=Users,dc=amaris,dc=ovh",
   ;;      :pwd-max-age 7200,
-  ;;      :pwd-expiration-date "2018-08-22T23:17:17Z"}
+  ;;      :pwd-expiration-date "2018-08-26T14:32:29Z"}
+  ;;     nil]
+
+  (dir/authenticated-user directory (:mail user12) (:pwd user12))
+  ;; => [{:description "This is User12's description",
+  ;;      :phone "+3387654321",
+  ;;      :uid "us12",
+  ;;      :mail "user12@domain1.com",
+  ;;      :pwd-changed-time "2018-08-26T12:32:29Z",
+  ;;      :dn "cn=User12,ou=Class2,ou=Users,dc=amaris,dc=ovh",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-26T14:32:29Z"}
   ;;     nil]
 
   )
@@ -141,14 +202,24 @@
   (dir/user-pwd-reset directory "toto@acme.com" "hello")
   ;; => [nil ["user not found"]]
 
-  (dir/user-pwd-reset directory mail "hello")
-  ;; => [{:uid "JohnD",
-  ;;      :description "This is John Doe's description",
-  ;;      :mail "user1@myDomain.com",
+  (dir/user-pwd-reset directory (:mail user11) "hello")
+  ;; => [{:uid "us11",
+  ;;      :description "This is User11's description",
+  ;;      :mail "user11@domain1.com",
   ;;      :phone "+3312345678",
-  ;;      :pwd-changed-time "2018-08-24T14:51:50Z",
+  ;;      :pwd-changed-time "2018-08-26T12:38:26Z",
   ;;      :pwd-max-age 7200,
-  ;;      :pwd-expiration-date "2018-08-24T16:51:50Z"}
+  ;;      :pwd-expiration-date "2018-08-26T14:38:26Z"}
+  ;;     nil]
+
+  (dir/user-pwd-reset directory (:mail user12) "world")
+  ;; => [{:uid "us12",
+  ;;      :description "This is User12's description",
+  ;;      :mail "user12@domain1.com",
+  ;;      :phone "+3387654321",
+  ;;      :pwd-changed-time "2018-08-26T12:38:49Z",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-26T14:38:49Z"}
   ;;     nil]
 
   )
@@ -186,56 +257,68 @@
   (dir/user-pwd-update directory "toto@acme.com" "hello" "Password11")
   ;; => [nil ["user not found"]]
 
-  (dir/user-pwd-update directory mail "hello" "bouh")
+  (dir/user-pwd-update directory (:mail user11) "bah" "bouh")
   ;; => [nil ["invalid credentials"]]
 
-  (dir/user-pwd-update directory mail "Password11" "bouh")
+  (dir/user-pwd-update directory (:mail user11) "hello" "bouh")
   ;; => [nil ["Password fails quality checking policy"]]
 
-  (dir/user-pwd-update directory mail "Password12" "Password13")
-  ;; => [{:uid "JohnD",
-  ;;      :description "This is John Doe's description",
-  ;;      :mail "user1@myDomain.com",
+  (dir/user-pwd-update directory (:mail user11) "hello" "Password11")
+  ;; => [nil ["Password is in history of old passwords"]]
+
+  (dir/user-pwd-update directory (:mail user11) "hello" "Password11a")
+  ;; => [{:uid "us11",
+  ;;      :description "This is User11's description",
+  ;;      :mail "user11@domain1.com",
   ;;      :phone "+3312345678",
-  ;;      :pwd-changed-time "2018-08-24T18:34:48Z",
+  ;;      :pwd-changed-time "2018-08-26T12:40:39Z",
   ;;      :pwd-max-age 7200,
-  ;;      :pwd-expiration-date "2018-08-24T20:34:48Z"}
+  ;;      :pwd-expiration-date "2018-08-26T14:40:39Z"}
+  ;;     nil]
+
+  (dir/user-pwd-update directory (:mail user12) "world" "Password11")
+  ;; => [{:uid "us12",
+  ;;      :description "This is User12's description",
+  ;;      :mail "user12@domain1.com",
+  ;;      :phone "+3387654321",
+  ;;      :pwd-changed-time "2018-08-26T12:41:01Z",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-08-26T14:41:01Z"}
   ;;     nil]
 
   )
 
 
+(defn guard-conn
+  [fn {:keys [conn config] :as directory} & args]
+  ;; (when (nil? @conn)
+  ;;   (reset! conn (first (ldap/connect config))))
+  (if (nil? @conn)
+    (->errors ["connection failed"])
+    (apply fn directory args)))
 
 (defrecord LDAPDirectory [conn config schema]
+  DirectoryFilters
+  (dir/user-mail-filter [this mail]
+    (f/user-mail (get-in this [:schema :user]) mail))
+  (dir/user-uid-filter [this uid]
+    (f/user-uid (get-in this [:schema :user]) uid))
   Directory
-  (dir/user-mail-filter [this mail] (f/user-mail (get-in this [:schema :user]) mail))
-  (dir/user-uid-filter [this uid] (f/user-uid (get-in this [:schema :user]) uid))
-  (dir/user [this filter] (user this filter))
-  (dir/authenticated-user [this mail pwd] (authenticated-user this mail pwd))
-  (dir/user-pwd-reset [this mail new-pwd] (user-pwd-reset this mail new-pwd))
-  (dir/user-pwd-update [this mail pwd new-pwd] (user-pwd-update this mail pwd new-pwd)))
+  (dir/user [this filter-fn]
+    (guard-conn user this (filter-fn this)))
+  (dir/authenticated-user [this mail pwd]
+    (guard-conn authenticated-user this mail pwd))
+  (dir/user-pwd-reset [this mail new-pwd]
+    (guard-conn user-pwd-reset this mail new-pwd))
+  (dir/user-pwd-update [this mail pwd new-pwd]
+    (guard-conn user-pwd-update this mail pwd new-pwd)))
 
-(defn make-ldap-directory
-  [config schema]
+(defn make-directory
+  [{:keys [config schema]}]
   (let [conn (first (ldap/connect config))]
     (map->LDAPDirectory {:conn (atom conn)
                          :config config
                          :schema schema})))
-
-(comment
-  (def config {:host {:address "localhost"
-                      :port 636}
-               :ssl? true
-               :connect-timeout 1000
-               :timeout 1000
-               :bind-dn "cn=admin,dc=amaris,dc=ovh"
-               :password "KLD87cvU"
-               :users-base-dn "dc=amaris,dc=ovh"
-               :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
-
-  (def directory (make-ldap-directory config {:user user-schema
-                                              :pwd-policy {}}))
-  )
 
 
 
@@ -246,4 +329,186 @@
 
 (comment
   (close directory)
+  )
+
+
+
+(defn make-directory-pool
+  [configs]
+  (->DirectoryPool
+    (map (fn [[k v]] [(name k) (make-directory v)]) configs)))
+
+
+
+(comment
+  (def domain2dc "dc=domain2,dc=com")
+  (def config2 {:host {:address "localhost"
+                       :port 637}
+                :ssl? true
+                :connect-timeout 1000
+                :timeout 1000
+                :bind-dn (str "cn=admin," domain2dc)
+                :password "ldap2AdminPwd"
+                :users-base-dn (str "ou=Persons," domain2dc)
+                :default-pwd-policy (str "cn=ppDefault,ou=pwpolicies," domain2dc)})
+
+  (def bad-config
+    {:host {:address "localhost"
+            :port 1636}
+     :ssl? true
+     :connect-timeout 1000
+     :timeout 1000
+     :bind-dn "cn=admin,dc=amaris,dc=ovh"
+     :password "KLD87cvU"
+     :users-base-dn "dc=amaris,dc=ovh"
+     :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
+
+  (def pool (make-directory-pool
+              {:server1 {:config config1
+                         :schema {:user user-schema
+                                  :pwd-policy {}}}
+               :bad-server {:config bad-config
+                            :schema {:user user-schema
+                                     :pwd-policy {}}}
+               :server2 {:config config2
+                         :schema {:user user-schema
+                                  :pwd-policy {}}}}))
+
+  (dir/user pool #(dir/user-uid-filter % "toto"))
+  ;; => [nil
+  ;;     ("server1: user not found"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: user not found")]
+
+  (dir/user pool #(dir/user-uid-filter % "Us12"))
+  ;; => [["server1"
+  ;;      {:description "This is User12's description",
+  ;;       :phone "+3387654321",
+  ;;       :uid "us12",
+  ;;       :mail "user12@domain1.com",
+  ;;       :pwd-changed-time "2018-08-26T13:10:14Z",
+  ;;       :dn "cn=User12,ou=Class2,ou=Users,dc=domain1,dc=com",
+  ;;       :pwd-max-age 7200,
+  ;;       :pwd-expiration-date "2018-08-26T15:10:14Z"}]
+  ;;     ("bad-server: connection failed" "server2: user not found")]
+
+  (dir/user pool #(dir/user-mail-filter % "user21@domain2.com"))
+  ;; => [["server2"
+  ;;      {:description "This is User21's description",
+  ;;       :phone "+3312345678",
+  ;;       :uid "Us21",
+  ;;       :mail "user21@domain2.com",
+  ;;       :pwd-changed-time "2018-08-26T13:10:14Z",
+  ;;       :dn "cn=User21,ou=Class1,ou=Persons,dc=domain2,dc=com",
+  ;;       :pwd-max-age 28800,
+  ;;       :pwd-expiration-date "2018-08-26T21:10:14Z"}]
+  ;;     ("server1: user not found" "bad-server: connection failed")]  
+
+  (dir/authenticated-user pool "toto@titi.fr" "hello123")
+  ;; => [nil
+  ;;     ("server1: user not found"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: user not found")]
+  
+  (dir/authenticated-user pool (:mail user11) "hello123")
+  ;; => [nil
+  ;;     ("server1: invalid credentials"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: user not found")]
+  
+  (dir/authenticated-user pool (:mail user11) "Password11")
+  ;; => [["server1"
+  ;;      {:description "This is User11's description",
+  ;;       :phone "+3312345678",
+  ;;       :uid "us11",
+  ;;       :mail "user11@domain1.com",
+  ;;       :pwd-changed-time "2018-08-26T13:10:14Z",
+  ;;       :dn "cn=User11,ou=Class1,ou=Users,dc=domain1,dc=com",
+  ;;       :pwd-max-age 7200,
+  ;;       :pwd-expiration-date "2018-08-26T15:10:14Z"}]
+  ;;     ("bad-server: connection failed" "server2: user not found")]
+
+  (dir/authenticated-user pool "user22@domain2.com" "Password22")
+  ;; => [["server2"
+  ;;      {:description "This is User22's description",
+  ;;       :phone "+3387654321",
+  ;;       :uid "Us22",
+  ;;       :mail "user22@domain2.com",
+  ;;       :pwd-changed-time "2018-08-26T13:10:14Z",
+  ;;       :dn "cn=User22,ou=Class3,ou=Persons,dc=domain2,dc=com",
+  ;;       :pwd-max-age 28800,
+  ;;       :pwd-expiration-date "2018-08-26T21:10:14Z"}]
+  ;;     ("server1: user not found" "bad-server: connection failed")]
+  
+  (dir/user-pwd-reset pool "toto@titi.fr" "hello123")
+  ;; => [nil ("bad-server: connection failed" "server: user not found")]
+
+  (dir/user-pwd-reset pool (:mail user11) "hello")
+  ;; => [["server1"
+  ;;      {:uid "us11",
+  ;;       :description "This is User11's description",
+  ;;       :mail "user11@domain1.com",
+  ;;       :phone "+3312345678",
+  ;;       :pwd-changed-time "2018-08-26T13:17:26Z",
+  ;;       :pwd-max-age 7200,
+  ;;       :pwd-expiration-date "2018-08-26T15:17:26Z"}]
+  ;;     ("bad-server: connection failed" "server2: user not found")]
+
+  (dir/user-pwd-reset pool "user22@domain2.com" "world")
+  ;; => [["server2"
+  ;;      {:uid "Us22",
+  ;;       :description "This is User22's description",
+  ;;       :mail "user22@domain2.com",
+  ;;       :phone "+3387654321",
+  ;;       :pwd-changed-time "2018-08-26T13:18:08Z",
+  ;;       :pwd-max-age 28800,
+  ;;       :pwd-expiration-date "2018-08-26T21:18:08Z"}]
+  ;;     ("server1: user not found" "bad-server: connection failed")]  
+
+  (dir/user-pwd-update pool "toto@titi.fr" "hello" "world")
+  ;; => [nil
+  ;;     ("server1: user not found"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: user not found")]
+
+  (dir/user-pwd-update pool (:mail user11) "toto" "world")
+  ;; => [nil
+  ;;     ("server1: invalid credentials"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: user not found")]
+
+  (dir/user-pwd-update pool (:mail user11) "hello" "world")
+  ;; => [nil
+  ;;     ("server1: Password fails quality checking policy"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: user not found")]
+
+  (dir/user-pwd-update pool (:mail user11) "hello" "Password12")
+  ;; => [["server1"
+  ;;      {:uid "us11",
+  ;;       :description "This is User11's description",
+  ;;       :mail "user11@domain1.com",
+  ;;       :phone "+3312345678",
+  ;;       :pwd-changed-time "2018-08-26T13:19:36Z",
+  ;;       :pwd-max-age 7200,
+  ;;       :pwd-expiration-date "2018-08-26T15:19:36Z"}]
+  ;;     ("bad-server: connection failed" "server2: user not found")]
+
+  (dir/user-pwd-update pool "user22@domain2.com" "world" "Password21")
+  ;; => [["server2"
+  ;;      {:uid "Us22",
+  ;;       :description "This is User22's description",
+  ;;       :mail "user22@domain2.com",
+  ;;       :phone "+3387654321",
+  ;;       :pwd-changed-time "2018-08-26T13:20:21Z",
+  ;;       :pwd-max-age 28800,
+  ;;       :pwd-expiration-date "2018-08-26T21:20:21Z"}]
+  ;;     ("server1: user not found" "bad-server: connection failed")]
+
+  (dir/user-pwd-update pool "user22@domain2.com" "world" "Password21")
+  ;; => [nil
+  ;;     ("server1: An error occurred while attempting to connect to server localhost:636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: connection failed"
+  ;;      "server2: An error occurred while attempting to connect to server localhost:637:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:637:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))")]
+
   )

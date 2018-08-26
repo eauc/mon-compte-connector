@@ -1,6 +1,9 @@
 (ns mon-compte-connector.error)
 
 
+(def make-error vector)
+
+
 (defn ->result
   ([result error]
    [result (when (nil? result) [error])])
