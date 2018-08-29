@@ -1,7 +1,6 @@
 (ns mon-compte-connector.ldap-directory-test
   (:require [mon-compte-connector.ldap-directory :refer :all]
-            [clojure.test :refer [deftest testing is are]]
-            [mon-compte-connector.error :as error]))
+            [clojure.test :refer [deftest testing is are]]))
 
 (deftest ldap-directory-test
   (testing "first-user-found"
@@ -19,4 +18,4 @@
       ;; users
       []
       ;; result
-      [nil ["user not found"]])))
+      [nil ["User not found"]])))

@@ -3,7 +3,7 @@
             [clj-time.format :as timef]
             [clojure.set :refer [map-invert rename-keys]]
             [clojure.tools.logging :as log]
-            [mon-compte-connector.error :as error :refer [->result ->errors err->]]))
+            [mon-compte-connector.result :refer [->result ->errors]]))
 
 
 (defn attributes

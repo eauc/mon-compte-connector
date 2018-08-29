@@ -2,26 +2,14 @@
   (:import clojure.lang.ExceptionInfo)
   (:require [buddy.sign.jwt :as jwt]
             [clj-time.core :as time]
-            [mon-compte-connector.error :as error]))
-
-
-(comment
-
-  (def token
-    (jwt/sign {:user 1 :exp (time/plus (time/now) (time/seconds 5))}
-              "mySecret"
-              {:alg :hs256}))
-
-  (jwt/unsign token "mySecret" {:alg :hs512})
-
-  )
+            [mon-compte-connector.result :as result :refer [->result ->errors]]))
 
 
 (defn user-token
   [{:keys [mail uid] :as user} {:keys [now exp-delay secret] :as options}]
   (let [exp (time/plus now exp-delay)
         token (jwt/sign {:mail mail :uid uid :exp exp} secret (dissoc options :secret :now :exp-delay))]
-    (error/->result
+    (->result
       {:user user
        :token token})))
 
@@ -29,10 +17,10 @@
 (defn user-claim
   [token {:keys [secret] :as options}]
   (try
-    (error/->result
+    (->result
       (jwt/unsign token secret (dissoc options :secret)))
     (catch ExceptionInfo e
-      (error/->errors [(.getMessage e)]))))
+      (->errors [(.getMessage e)]))))
 
 
 (comment
@@ -50,7 +38,7 @@
   ;;     nil]
 
   (def user11-token
-    (error/result
+    (result/value
       (user-token {:mail "user11@domain1.com" :uid "us11"}
                   {:secret "mySecret"
                    :now now

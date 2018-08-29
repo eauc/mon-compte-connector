@@ -1,6 +1,6 @@
 (ns mon-compte-connector.directory-pool
   (:require [clojure.tools.logging :as log]
-            [mon-compte-connector.error :as error :refer [->result ->errors err->]]
+            [mon-compte-connector.result :as result :refer [->errors]]
             [mon-compte-connector.directory :as dir :refer [Directory]]))
 
 
@@ -8,14 +8,14 @@
 (defn first-result
   [results]
   (->> results
-       (filter (fn [[k val]] (error/ok? val)))
+       (filter (fn [[k val]] (result/ok? val)))
        first))
 
 
 (defn all-errors
   [results]
   (->> results
-       (map (fn [[k val]] (map #(str k ": " %) (error/errors val))))
+       (map (fn [[k val]] (map #(str k ": " %) (result/errors val))))
        flatten))
 
 
@@ -26,7 +26,7 @@
         [name result] result
         errors (all-errors searches)]
     (if result
-      (error/make-error [name (error/result result)] errors)
+      (result/make-result [name (result/value result)] errors)
       (->errors errors))))
 
 

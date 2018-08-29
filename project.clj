@@ -6,6 +6,7 @@
   :main mon-compte-connector.core
   :src ["src" "test"]
   :plugins [[lein-ancient "0.6.15"]
+            [lein-eftest "0.5.2"]
             [lein-pprint "1.2.0"]
             [refactor-nrepl "2.4.0-SNAPSHOT"]]
   :profiles {:dev {}

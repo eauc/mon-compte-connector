@@ -1,7 +1,7 @@
 (ns mon-compte-connector.auth-test
   (:require [mon-compte-connector.auth :refer :all]
             [clojure.test :as t :refer [deftest testing is are]]
-            [mon-compte-connector.error :as error]
+            [mon-compte-connector.result :as result]
             [clj-time.core :as time]))
 
 
@@ -16,7 +16,7 @@
                        :alg :hs256
                        :now now
                        :exp-delay (time/seconds 5)})
-                    error/result)]
+                    result/value)]
 
       (is (= user (:user token)))
 

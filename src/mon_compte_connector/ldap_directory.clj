@@ -1,7 +1,7 @@
 (ns mon-compte-connector.ldap-directory
   (:import com.unboundid.ldap.sdk.Filter)
   (:require [clojure.tools.logging :as log]
-            [mon-compte-connector.error :as error :refer [->result ->errors err->]]
+            [mon-compte-connector.result :as result :refer [->result ->errors err->]]
             [mon-compte-connector.directory :as dir :refer [Directory DirectoryFilters]]
             [mon-compte-connector.directory-pool :as dir-pool :refer [->DirectoryPool]]
             [mon-compte-connector.ldap :as ldap]
@@ -40,7 +40,7 @@
                 :users-base-dn (str "ou=Users," domain1dc)
                 :default-pwd-policy (str "cn=passwordDefault,ou=pwpolicies," domain1dc)})
 
-  (def directory (error/result
+  (def directory (result/value
                    (make-directory
                      {:config config1
                       :schema {:user user-schema
@@ -53,7 +53,7 @@
   (-> directory
       :conn
       deref
-      error/result))
+      result/value))
 
 
 (defn user-with-pwd-expiration-date
@@ -238,7 +238,7 @@
 (defn user-connection
   [{:keys [dn] :as user} pwd pool]
   (let [conn (.getConnection pool)
-        ok? (error/result (ldap/bind? {:dn dn :pwd pwd} conn))]
+        ok? (result/value (ldap/bind? {:dn dn :pwd pwd} conn))]
     (if ok?
       (->result [user conn])
       (->errors [invalid-credentials]))))
@@ -302,9 +302,9 @@
 
 (defn guard-conn
   [fn {:keys [conn config] :as directory} & args]
-  (when (not (error/ok? @conn))
+  (when (not (result/ok? @conn))
     (reset! conn (ldap/connect config)))
-  (if (error/ok? @conn)
+  (if (result/ok? @conn)
     (apply fn directory args)
     @conn))
 
@@ -327,11 +327,11 @@
 (defn make-directory
   [{:keys [config schema]}]
   (let [conn (ldap/connect config)]
-    (error/make-error
+    (result/make-result
       (map->LDAPDirectory {:conn (atom conn)
                            :config config
                            :schema schema})
-      (error/errors conn))))
+      (result/errors conn))))
 
 
 
@@ -349,12 +349,12 @@
 (defn make-directory-pool
   [configs]
   (let [conn-results (map (fn [[k v]] [(name k) (make-directory v)]) configs)]
-    (error/make-error
+    (result/make-result
       (->> conn-results
-           (map (fn [[k v]] [k (error/result v)]))
+           (map (fn [[k v]] [k (result/value v)]))
            ->DirectoryPool)
       (->> conn-results
-           (map (fn [[k v]] (map #(str k ": " %) (error/errors v))))
+           (map (fn [[k v]] (map #(str k ": " %) (result/errors v))))
            flatten
            (filter (fn [[k v]] (not (nil? v))))))))
 
@@ -383,7 +383,7 @@
      :users-base-dn "dc=amaris,dc=ovh"
      :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
 
-  (def pool (error/result (make-directory-pool
+  (def pool (result/value (make-directory-pool
                             {:server1 {:config config1
                                        :schema {:user user-schema
                                                 :pwd-policy {}}}

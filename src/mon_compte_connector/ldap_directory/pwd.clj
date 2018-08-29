@@ -1,6 +1,6 @@
 (ns mon-compte-connector.ldap-directory.pwd
   (:require [clojure.tools.logging :as log]
-            [mon-compte-connector.error :as error :refer [->result ->errors err->]]
+            [mon-compte-connector.result :refer [->result]]
             [mon-compte-connector.ldap-directory.user :as u]))
 
 

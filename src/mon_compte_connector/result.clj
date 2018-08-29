@@ -1,14 +1,14 @@
-(ns mon-compte-connector.error)
+(ns mon-compte-connector.result)
 
 
-(def make-error vector)
+(def make-result vector)
 
 
 (defn ->result
-  ([result error]
-   [result (when (nil? result) [error])])
-  ([result]
-   [result nil]))
+  ([value error]
+   [value (when (nil? value) [error])])
+  ([value]
+   [value nil]))
 
 
 (defn ->errors
@@ -21,19 +21,19 @@
   [result (concat errors new-errors)])
 
 
-(def result first)
+(def value first)
 
 
 (def errors second)
 
 
-(def ok? (comp not nil? result))
+(def ok? (comp not nil? value))
 
 
 (defn apply-or-error
   [x fn & args]
   (if (ok? x)
-    (apply fn (result x) args)
+    (apply fn (value x) args)
     x))
 
 

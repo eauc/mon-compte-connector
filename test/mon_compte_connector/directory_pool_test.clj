@@ -1,7 +1,7 @@
 (ns mon-compte-connector.directory-pool-test
   (:require [mon-compte-connector.directory-pool :refer :all]
             [clojure.test :refer [deftest testing is are]]
-            [mon-compte-connector.error :as error :refer [->result ->errors]]))
+            [mon-compte-connector.result :refer [->result ->errors]]))
 
 (deftest directory-pool-test
   (testing "on-pool"

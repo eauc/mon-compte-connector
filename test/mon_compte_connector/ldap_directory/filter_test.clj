@@ -1,7 +1,6 @@
 (ns mon-compte-connector.ldap-directory.filter-test
   (:require [mon-compte-connector.ldap-directory.filter :refer :all]
-            [clojure.test :refer [deftest testing is are]]
-            [mon-compte-connector.error :as error]))
+            [clojure.test :refer [deftest testing is are]]))
 
 (deftest ldap-directory.filter-test
   (testing "user-mail-filter"
