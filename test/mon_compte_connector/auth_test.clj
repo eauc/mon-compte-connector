@@ -1,8 +1,9 @@
 (ns mon-compte-connector.auth-test
   (:require [mon-compte-connector.auth :refer :all]
             [clojure.test :as t :refer [deftest testing is are]]
+            [clj-time.core :as time]
             [mon-compte-connector.result :as result]
-            [clj-time.core :as time]))
+            [mon-compte-connector.example :refer [example]]))
 
 
 (deftest auth-test
@@ -20,40 +21,32 @@
 
       (is (= user (:user token)))
 
-      (are [options result]
+      (example
 
-          (= result (user-claim (:token token) options))
+        [options result]
 
-        ;; options
-          {:secret "mySecret"
-           :alg :hs256
-           :now (time/plus now (time/seconds 1))}
-          ;; result
-          [{:uid "userUid", :mail "user@mail.com" :exp 529646612} nil]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        (= result (user-claim (:token token) options))
 
-          ;; options
-          {:secret "otherSecret"
-           :alg :hs256
-           :now (time/plus now (time/seconds 1))}
-          ;; result
-          [nil ["Message seems corrupt or manipulated."]]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        {:describe "ok"
+         :options {:secret "mySecret"
+                  :alg :hs256
+                  :now (time/plus now (time/seconds 1))}
+         :result [{:uid "userUid", :mail "user@mail.com" :exp 529646612} nil]}
 
-          ;; options
-          {:secret "mySecret"
-           :alg :hs512
-           :now (time/plus now (time/seconds 1))}
-          ;; result
-          [nil ["Message seems corrupt or manipulated."]]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        {:describe "invalid secred"
+         :options {:secret "otherSecret"
+                   :alg :hs256
+                   :now (time/plus now (time/seconds 1))}
+         :result [nil ["Message seems corrupt or manipulated."]]}
 
-          ;; options
-          {:secret "mySecret"
-           :alg :hs256
-           :now (time/plus now (time/seconds 6))}
-          ;; result
-          [nil ["Token is expired (529646612)"]]
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        {:describe "invalid algo"
+         :options {:secret "mySecret"
+                   :alg :hs512
+                   :now (time/plus now (time/seconds 1))}
+         :result [nil ["Message seems corrupt or manipulated."]]}
 
-          ))))
+        {:describe "token expired"
+         :options {:secret "mySecret"
+                  :alg :hs256
+                  :now (time/plus now (time/seconds 6))}
+         :result [nil ["Token is expired (529646612)"]]}))))
