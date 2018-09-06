@@ -3,7 +3,7 @@
   (:require [mon-compte-connector.auth :refer :all]
             [clojure.test :as t :refer [deftest testing is are]]
             [clj-time.core :as time]
-            [mon-compte-connector.result :as result :refer [->result]]
+            [mon-compte-connector.result :as result :refer [->errors ->result]]
             [mon-compte-connector.example :refer [example]]))
 
 
@@ -104,4 +104,55 @@
       (is (= (result/make-result nil ["Code is invalid"])
              (user-code-valid? user 123456
                                (assoc options :date (Date. 310000))))
-          "invalid code"))))
+          "invalid code")))
+
+  (testing "onte-time-claim"
+    (let [now (time/date-time 1986 10 14 4 3 27 456)
+          options {:secret "mySecret"
+                   :exp-delay (time/seconds 10)
+                   :alg :hs256
+                   :store (atom {})
+                   :now now}
+          user {:mail "user11@domain1.com"}
+          {:keys [token]} (result/value (one-time-token user options))]
+
+      (is (= (->result user)
+             (one-time-claim user token options)))
+
+      (is (= (->errors ["One-time token is invalid"])
+             (one-time-claim user token
+                             (assoc options :now (time/plus now (time/seconds 9)))))
+          "token is valid only one time"))
+
+    (let [now (time/date-time 1986 10 14 4 3 27 456)
+          options {:secret "mySecret"
+                   :exp-delay (time/seconds 10)
+                   :alg :hs256
+                   :store (atom {})
+                   :now now}
+          user {:mail "user11@domain1.com"}
+          {:keys [token]} (result/value (one-time-token user options))]
+
+      (is (= (->errors ["Token is expired (529646617)"])
+             (one-time-claim user token
+                             (assoc options :now (time/plus now (time/seconds 11)))))
+          "token is expired")
+
+      (is (= (->errors ["Message seems corrupt or manipulated."])
+             (one-time-claim user "toto" options))
+          "token is invalid")
+
+      (is (= (->errors ["Message seems corrupt or manipulated."])
+             (one-time-claim user token (assoc options :alg :hs512)))
+          "alg is invalid")
+
+      (is (= (->errors ["Message seems corrupt or manipulated."])
+             (one-time-claim user token (assoc options :secret "otherSecret")))
+          "secret is invalid")
+
+      (is (= (->errors ["One-time token is invalid"])
+             (one-time-claim (assoc user :mail "user22@domain2.com") token options))
+          "other user")
+
+      (is (= (->result user)
+             (one-time-claim user token options))))))

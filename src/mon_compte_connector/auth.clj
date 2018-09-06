@@ -117,3 +117,67 @@
   ;; => [nil ["Code is invalid"]]
 
   )
+
+
+(def one-time-tokens (atom {}))
+
+(defn one-time-token
+  [{:keys [mail]} {:keys [now exp-delay secret store] :as options :or {now (time/now)}}]
+  (let [exp (time/plus now exp-delay)
+        token (jwt/sign {:mail mail :exp exp} secret (dissoc options :store :secret :now :exp-delay))]
+    (swap! store assoc mail token)
+    (->result
+      {:token token})))
+
+(def ott-invalid "One-time token is invalid")
+
+(defn one-time-claim
+  [{:keys [mail] :as user} token {:keys [secret store] :as options}]
+  (let [claim? (try
+                 (jwt/unsign token secret (dissoc options :secret :store))
+                 (catch ExceptionInfo e
+                   (->errors [(.getMessage e)])))]
+    (if-not (result/ok? claim?)
+      claim?
+      (let [valid? (= token (get @store mail))]
+        (if-not valid?
+          (->errors [ott-invalid])
+          (do
+            (swap! store dissoc mail)
+            (->result user)))))))
+
+
+(comment
+
+  (def test-ott-options
+    {:secret "mySecret"
+     :exp-delay (time/seconds 10)
+     :alg :hs256
+     :store one-time-tokens})
+
+  (one-time-token "user11@domain1.com" test-ott-options)
+  ;; => [{:token
+  ;;      "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwiZXhwIjoxNTM2MTg0NzMyfQ.X4tZDqfkmeGERFFFumhXM_lm0-1QxSnjRocvP30W9Zg"}
+  ;;     nil]
+
+  (def test-ott
+    (result/value
+      (one-time-token "user11@domain1.com" test-ott-options)))
+
+  (one-time-claim {:token (:token test-ott)
+                   :mail "user11@domain1.com"} (dissoc test-ott-options :now))
+  ;; => ["user11@domain1.com" nil]
+
+  (one-time-claim {:token (:token test-ott)
+                   :mail "user11@domain1.com"} (dissoc test-ott-options :now))
+  ;; => [nil ["One-time token is invalid"]]
+
+  (one-time-claim {:token (:token test-ott)
+                   :mail "user11@domain1.com"} (dissoc test-ott-options :now))
+  ;; => [nil ["Token is expired (1536184740)"]]
+
+  (list test-ott)
+
+  (deref one-time-tokens)
+
+  )
