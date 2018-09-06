@@ -13,6 +13,14 @@
 
       (= log (event-log result options))
 
+      {:describe "result ok / no type / no errors"
+       :result (result/make-result :value)
+       :options {:domain "domain1.com" :device-uid "#deviceUid1"}
+       :log {:status "OK"
+             :messages []
+             :domain "domain1.com"
+             :deviceUid "#deviceUid1"}}
+
       {:describe "result ok / no type"
        :result (result/make-result :value ["error1" "error2"])
        :options {:domain "domain1.com" :device-uid "#deviceUid1"}
@@ -49,9 +57,21 @@
 
       {:describe "success notification"
        :result (result/make-result
-                 ["server1" {:pwd-expiration-date "2018-08-27T06:52:33Z"}]
+                 {:pwd-expiration-date "2018-08-27T06:52:33Z"}
                  ["error1" "error2"])
        :options {:type "login" :domain "domain1.com" :device-uid "#deviceUid1"}
+       :notif {:status "OK"
+               :messages ["error1" "error2"]
+               :type "login"
+               :domain "domain1.com"
+               :deviceUid "#deviceUid1"
+               :passwordExpirationDate "2018-08-27T06:52:33Z"}}
+
+      {:describe "success notification / user-path"
+       :result (result/make-result
+                 {:user {:pwd-expiration-date "2018-08-27T06:52:33Z"}}
+                 ["error1" "error2"])
+       :options {:type "login" :domain "domain1.com" :device-uid "#deviceUid1" :user-path [:user]}
        :notif {:status "OK"
                :messages ["error1" "error2"]
                :type "login"

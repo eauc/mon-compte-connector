@@ -1,5 +1,5 @@
 (ns mon-compte-connector.event-log
-  (:require [mon-compte-connector.result :as result]))
+  (:require [mon-compte-connector.result :as result :refer [->result]]))
 
 
 (comment
@@ -29,7 +29,7 @@
 (defn event-log
   [result {:keys [type domain device-uid]}]
   (cond-> {:status (if (result/ok? result) "OK" "Error")
-           :messages (result/errors result)
+           :messages (or (result/errors result) [])
            :domain domain
            :deviceUid device-uid}
     (not (nil? type)) (assoc :type type)))
@@ -57,10 +57,10 @@
 
 
 (defn notification
-  [result options]
+  [result {:keys [user-path] :as options :or {user-path []}}]
   (cond-> (event-log result options)
     (result/ok? result) (assoc :passwordExpirationDate
-                               (-> result result/value second :pwd-expiration-date))))
+                               (-> result result/value (get-in (conj user-path :pwd-expiration-date))))))
 
 (comment
 
