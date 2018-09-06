@@ -8,7 +8,7 @@
   (testing "on-pool"
     (let [test-fn (fn [dir & xs]
                     (case dir
-                      "ok" (->result xs)
+                      "ok" (->result {:args xs})
                       "ko" (->errors xs)
                       (->errors ["not found"])))]
 
@@ -28,15 +28,13 @@
                 "server2" "ok"
                 "server3" "ko"}
          :args ["arg1" "arg2"]
-         :result [["server2" ["arg1" "arg2"]] ["server1: not found"
-                                               "server3: arg1"
-                                               "server3: arg2"]]}
-
+         :result [{:args ["arg1" "arg2"] :server "server2"}
+                  ["server1: not found" "server3: arg1" "server3: arg2"]]}
         {:describe "multiple results -> the first wins"
          :dirs {"server1" "dir1"
                 "server2" "ok"
                 "server3" "dir1"
                 "server4" "ok"}
          :args ["arg1" "arg2"]
-         :result [["server2" ["arg1" "arg2"]] ["server1: not found"
-                                               "server3: not found"]]}))))
+         :result [{:args ["arg1" "arg2"] :server "server2"}
+                  ["server1: not found" "server3: not found"]]}))))

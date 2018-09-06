@@ -26,7 +26,7 @@
         [name result] result
         errors (all-errors searches)]
     (if result
-      (result/make-result [name (result/value result)] errors)
+      (result/make-result (assoc (result/value result) :server name) errors)
       (->errors errors))))
 
 
