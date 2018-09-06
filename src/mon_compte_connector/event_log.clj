@@ -89,10 +89,10 @@
 
 
 (defn reset-code
-  [result options]
-  (cond-> (event-log result options)
-    (result/ok? result) (-> (assoc :phone (-> result result/value second :user :phone))
-                            (assoc :code (-> result result/value second :code)))))
+  [result? options]
+  (cond-> (event-log result? options)
+    (result/ok? result?) (-> (assoc :phone (-> result? result/value :user :phone))
+                             (assoc :code (-> result? result/value :code)))))
 
 (comment
 

@@ -78,19 +78,21 @@
 
 (defn user-code
   [user {:keys [gen-key store] :as options}]
-  (-> user
-      (user-key options)
-      (ot/get-totp-token (dissoc options :store :gen-key))
-      ->result))
+  (let [code (-> user
+                 (user-key options)
+                 (ot/get-totp-token (dissoc options :store :gen-key)))]
+    (->result
+      {:user user
+       :code code})))
 
 (def code-invalid "Code is invalid")
 
 (defn user-code-valid?
-  [{:keys [mail] :as user} code {:keys [store] :as options}]
-  (let [valid? (ot/is-valid-totp-token? code (user-key user options)
+  [mail code {:keys [store] :as options}]
+  (let [valid? (ot/is-valid-totp-token? code (user-key {:mail mail} options)
                                         (dissoc options :store :gen-keys))]
     (if valid?
-      (->result user)
+      (->result mail)
       (->errors [code-invalid]))))
 
 (comment
@@ -122,7 +124,7 @@
 (def one-time-tokens (atom {}))
 
 (defn one-time-token
-  [{:keys [mail]} {:keys [now exp-delay secret store] :as options :or {now (time/now)}}]
+  [mail {:keys [now exp-delay secret store] :as options :or {now (time/now)}}]
   (let [exp (time/plus now exp-delay)
         token (jwt/sign {:mail mail :exp exp} secret (dissoc options :store :secret :now :exp-delay))]
     (swap! store assoc mail token)
@@ -132,9 +134,10 @@
 (def ott-invalid "One-time token is invalid")
 
 (defn one-time-claim
-  [{:keys [mail] :as user} token {:keys [secret store] :as options}]
+  [mail token {:keys [secret store] :as options}]
   (let [claim? (try
-                 (jwt/unsign token secret (dissoc options :secret :store))
+                 (->result
+                   (jwt/unsign token secret (dissoc options :secret :store)))
                  (catch ExceptionInfo e
                    (->errors [(.getMessage e)])))]
     (if-not (result/ok? claim?)
@@ -144,7 +147,7 @@
           (->errors [ott-invalid])
           (do
             (swap! store dissoc mail)
-            (->result user)))))))
+            claim?))))))
 
 
 (comment

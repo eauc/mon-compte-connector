@@ -21,13 +21,18 @@
   [result (concat errors new-errors)])
 
 
-(def value first)
+(defn value
+  ([result? default]
+   (let [v (first result?)]
+     (if (nil? v) default v)))
+  ([result?]
+   (value result? nil)))
 
 
 (def errors second)
 
 
-(def ok? (comp not nil? value))
+(def ok? (comp not nil? first))
 
 
 (defn apply-or-error
@@ -40,5 +45,5 @@
 (defmacro err->
   [val & fns]
   (let [fns (for [f fns] `(apply-or-error ~@f))]
-    `(-> [~val nil]
+    `(-> ~val
          ~@fns)))

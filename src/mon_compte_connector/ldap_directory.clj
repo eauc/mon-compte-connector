@@ -12,39 +12,40 @@
 
 
 (comment
-  (def domain1 "domain1.com")
-  (def user11 {:mail (str "user11@" domain1)
-               :pwd "Password11"})
-  (def user12 {:mail (str "user12@" domain1)
-               :pwd "Password12"})
-  (def domain2 "domain2.com")
-  (def user21 {:mail (str "user21@" domain2)
-               :pwd "Password21"})
-  (def user22 {:mail (str "user22@" domain2)
-               :pwd "Password22"})
+  (do
+    (def domain1 "domain1.com")
+    (def user11 {:mail (str "user11@" domain1)
+                 :pwd "Password11"})
+    (def user12 {:mail (str "user12@" domain1)
+                 :pwd "Password12"})
+    (def domain2 "domain2.com")
+    (def user21 {:mail (str "user21@" domain2)
+                 :pwd "Password21"})
+    (def user22 {:mail (str "user22@" domain2)
+                 :pwd "Password22"})
 
-  (def user-schema {:object-class "person"
-                    :attributes {:description "description"
-                                 :mail "mail"
-                                 :phone "mobile"
-                                 :password "userPassword"}})
+    (def user-schema {:object-class "person"
+                      :attributes {:description "description"
+                                   :mail "mail"
+                                   :phone "mobile"
+                                   :password "userPassword"}})
 
-  (def domain1dc "dc=domain1,dc=com")
-  (def config1 {:host {:address "localhost"
-                       :port 636}
-                :ssl? true
-                :connect-timeout 1000
-                :timeout 1000
-                :bind-dn (str "cn=admin," domain1dc)
-                :password "ldap1AdminPwd"
-                :users-base-dn (str "ou=Users," domain1dc)
-                :default-pwd-policy (str "cn=passwordDefault,ou=pwpolicies," domain1dc)})
+    (def domain1dc "dc=domain1,dc=com")
+    (def config1 {:host {:address "localhost"
+                         :port 636}
+                  :ssl? true
+                  :connect-timeout 1000
+                  :timeout 1000
+                  :bind-dn (str "cn=admin," domain1dc)
+                  :password "ldap1AdminPwd"
+                  :users-base-dn (str "ou=Users," domain1dc)
+                  :default-pwd-policy (str "cn=passwordDefault,ou=pwpolicies," domain1dc)})
 
-  (def directory (result/value
-                   (make-directory
-                     {:config config1
-                      :schema {:user user-schema
-                               :pwd-policy {}}})))
+    (def directory (result/value
+                     (make-directory
+                       {:config config1
+                        :schema {:user user-schema
+                                 :pwd-policy {}}}))))
   )
 
 
@@ -59,8 +60,7 @@
 (defn user-with-pwd-expiration-date
   [user {:keys [config schema] :as directory}]
   (let [pwd-policy-schema (get schema :pwd-policy)]
-    (err-> user
-           (pp/query config pwd-policy-schema)
+    (err-> (pp/query user config pwd-policy-schema)
            (ldap/get (conn directory))
            (pp/map-attributes pwd-policy-schema)
            (pp/expiration-date user pwd-policy-schema))))
@@ -87,7 +87,7 @@
 (defn user
   [{:keys [schema] :as directory} filter]
   (let [user-schema (get schema :user)]
-    (err-> (u/query directory filter)
+    (err-> (->result (u/query directory filter))
            (ldap/search (conn directory))
            (first-user-found)
            (u/map-attributes user-schema)
@@ -151,14 +151,12 @@
 
 (defn check-user-auth
   [{:keys [dn] :as user} pwd conn]
-  (err-> {:dn dn :pwd pwd}
-         (ldap/bind? conn)
+  (err-> (ldap/bind? {:dn dn :pwd pwd} conn)
          (#(if % (->result user) (->errors [invalid-credentials])))))
 
 (defn authenticated-user
   [directory mail pwd]
-  (err-> directory
-         (user (dir/user-mail-filter directory mail))
+  (err-> (user directory (dir/user-mail-filter directory mail))
          (check-user-auth pwd (conn directory))))
 
 (comment
@@ -200,8 +198,7 @@
 (defn user-pwd-reset
   [{:keys [schema] :as directory} mail new-pwd]
   (let [user-schema (:user schema)]
-    (err-> directory
-           (user (dir/user-mail-filter directory mail))
+    (err-> (user directory (dir/user-mail-filter directory mail))
            (p/reset-query user-schema new-pwd)
            (ldap/modify (conn directory))
            (#(->result (:post-read %)))
@@ -246,8 +243,7 @@
 (defn pwd-update
   [[user user-conn] {:keys [schema] :as directory} new-pwd]
   (let [user-schema (:user schema)
-        result (err-> user
-                      (p/reset-query user-schema new-pwd)
+        result (err-> (p/reset-query user user-schema new-pwd)
                       (ldap/modify user-conn)
                       (#(->result (:post-read %)))
                       (u/map-attributes user-schema))]
@@ -257,8 +253,7 @@
 (defn user-pwd-update
   [{:keys [schema] :as directory} mail pwd new-pwd]
   (let [user-schema (:user schema)]
-    (err-> directory
-           (user (dir/user-mail-filter directory mail))
+    (err-> (user directory (dir/user-mail-filter directory mail))
            (user-connection pwd (conn directory))
            (pwd-update directory new-pwd)
            (user-with-pwd-expiration-date directory))))
@@ -361,179 +356,180 @@
 
 
 (comment
-  (def domain2dc "dc=domain2,dc=com")
-  (def config2 {:host {:address "localhost"
-                       :port 637}
-                :ssl? true
-                :connect-timeout 1000
-                :timeout 1000
-                :bind-dn (str "cn=admin," domain2dc)
-                :password "ldap2AdminPwd"
-                :users-base-dn (str "ou=Persons," domain2dc)
-                :default-pwd-policy (str "cn=ppDefault,ou=pwpolicies," domain2dc)})
+  (do
+    (def domain2dc "dc=domain2,dc=com")
+    (def config2 {:host {:address "localhost"
+                         :port 637}
+                  :ssl? true
+                  :connect-timeout 1000
+                  :timeout 1000
+                  :bind-dn (str "cn=admin," domain2dc)
+                  :password "ldap2AdminPwd"
+                  :users-base-dn (str "ou=Persons," domain2dc)
+                  :default-pwd-policy (str "cn=ppDefault,ou=pwpolicies," domain2dc)})
 
-  (def bad-config
-    {:host {:address "localhost"
-            :port 1636}
-     :ssl? true
-     :connect-timeout 1000
-     :timeout 1000
-     :bind-dn "cn=admin,dc=amaris,dc=ovh"
-     :password "KLD87cvU"
-     :users-base-dn "dc=amaris,dc=ovh"
-     :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
+    (def bad-config
+      {:host {:address "localhost"
+              :port 1636}
+       :ssl? true
+       :connect-timeout 1000
+       :timeout 1000
+       :bind-dn "cn=admin,dc=amaris,dc=ovh"
+       :password "KLD87cvU"
+       :users-base-dn "dc=amaris,dc=ovh"
+       :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
 
-  (def pool (result/value (make-directory-pool
-                            {:server1 {:config config1
-                                       :schema {:user user-schema
-                                                :pwd-policy {}}}
-                             :bad-server {:config bad-config
-                                          :schema {:user user-schema
-                                                   :pwd-policy {}}}
-                             :server2 {:config config2
-                                       :schema {:user user-schema
-                                                :pwd-policy {}}}})))
+    (def pool (result/value (make-directory-pool
+                              {:server1 {:config config1
+                                         :schema {:user user-schema
+                                                  :pwd-policy {}}}
+                               :bad-server {:config bad-config
+                                            :schema {:user user-schema
+                                                     :pwd-policy {}}}
+                               :server2 {:config config2
+                                         :schema {:user user-schema
+                                                  :pwd-policy {}}}}))))
 
   (dir/user pool #(dir/user-uid-filter % "toto"))
   ;; => [nil
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user pool #(dir/user-uid-filter % "Us12"))
-  ;; => [["server1"
-  ;;      {:description "This is User12's description",
-  ;;       :phone "+3387654321",
-  ;;       :uid "us12",
-  ;;       :mail "user12@domain1.com",
-  ;;       :pwd-changed-time "2018-08-26T22:46:47Z",
-  ;;       :dn "cn=User12,ou=Class2,ou=Users,dc=domain1,dc=com",
-  ;;       :pwd-max-age 7200,
-  ;;       :pwd-expiration-date "2018-08-27T00:46:47Z"}]
-  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;; => [{:description "This is User12's description",
+  ;;      :phone "+3387654321",
+  ;;      :uid "us12",
+  ;;      :server "server1",
+  ;;      :mail "user12@domain1.com",
+  ;;      :pwd-changed-time "2018-09-06T21:40:50Z",
+  ;;      :dn "cn=User12,ou=Class2,ou=Users,dc=domain1,dc=com",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-09-06T23:40:50Z"}
+  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user pool #(dir/user-mail-filter % "user21@domain2.com"))
-  ;; => [["server2"
-  ;;      {:description "This is User21's description",
-  ;;       :phone "+3312345678",
-  ;;       :uid "Us21",
-  ;;       :mail "user21@domain2.com",
-  ;;       :pwd-changed-time "2018-08-26T22:46:47Z",
-  ;;       :dn "cn=User21,ou=Class1,ou=Persons,dc=domain2,dc=com",
-  ;;       :pwd-max-age 28800,
-  ;;       :pwd-expiration-date "2018-08-27T06:46:47Z"}]
+  ;; => [{:description "This is User21's description",
+  ;;      :phone "+3312345678",
+  ;;      :uid "Us21",
+  ;;      :server "server2",
+  ;;      :mail "user21@domain2.com",
+  ;;      :pwd-changed-time "2018-09-06T21:40:50Z",
+  ;;      :dn "cn=User21,ou=Class1,ou=Persons,dc=domain2,dc=com",
+  ;;      :pwd-max-age 28800,
+  ;;      :pwd-expiration-date "2018-09-07T05:40:50Z"}
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))")]
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636")]
 
   (dir/authenticated-user pool "toto@titi.fr" "hello123")
   ;; => [nil
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/authenticated-user pool (:mail user11) "hello123")
   ;; => [nil
   ;;     ("server1: Invalid credentials"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/authenticated-user pool (:mail user11) "Password11")
-  ;; => [["server1"
-  ;;      {:description "This is User11's description",
-  ;;       :phone "+3312345678",
-  ;;       :uid "us11",
-  ;;       :mail "user11@domain1.com",
-  ;;       :pwd-changed-time "2018-08-26T22:46:47Z",
-  ;;       :dn "cn=User11,ou=Class1,ou=Users,dc=domain1,dc=com",
-  ;;       :pwd-max-age 7200,
-  ;;       :pwd-expiration-date "2018-08-27T00:46:47Z"}]
-  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;; => [{:description "This is User11's description",
+  ;;      :phone "+3312345678",
+  ;;      :uid "us11",
+  ;;      :server "server1",
+  ;;      :mail "user11@domain1.com",
+  ;;      :pwd-changed-time "2018-09-06T21:40:50Z",
+  ;;      :dn "cn=User11,ou=Class1,ou=Users,dc=domain1,dc=com",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-09-06T23:40:50Z"}
+  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/authenticated-user pool "user22@domain2.com" "Password22")
-  ;; => [["server2"
-  ;;      {:description "This is User22's description",
-  ;;       :phone "+3387654321",
-  ;;       :uid "Us22",
-  ;;       :mail "user22@domain2.com",
-  ;;       :pwd-changed-time "2018-08-26T22:46:47Z",
-  ;;       :dn "cn=User22,ou=Class3,ou=Persons,dc=domain2,dc=com",
-  ;;       :pwd-max-age 28800,
-  ;;       :pwd-expiration-date "2018-08-27T06:46:47Z"}]
+  ;; => [{:description "This is User22's description",
+  ;;      :phone "+3387654321",
+  ;;      :uid "Us22",
+  ;;      :server "server2",
+  ;;      :mail "user22@domain2.com",
+  ;;      :pwd-changed-time "2018-09-06T21:40:50Z",
+  ;;      :dn "cn=User22,ou=Class3,ou=Persons,dc=domain2,dc=com",
+  ;;      :pwd-max-age 28800,
+  ;;      :pwd-expiration-date "2018-09-07T05:40:50Z"}
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))")]
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636")]
 
   (dir/user-pwd-reset pool "toto@titi.fr" "hello123")
   ;; => [nil
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user-pwd-reset pool (:mail user11) "hello")
-  ;; => [["server1"
-  ;;      {:uid "us11",
-  ;;       :description "This is User11's description",
-  ;;       :mail "user11@domain1.com",
-  ;;       :phone "+3312345678",
-  ;;       :pwd-changed-time "2018-08-26T22:50:36Z",
-  ;;       :pwd-max-age 7200,
-  ;;       :pwd-expiration-date "2018-08-27T00:50:36Z"}]
-  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;; => [{:uid "us11",
+  ;;      :description "This is User11's description",
+  ;;      :mail "user11@domain1.com",
+  ;;      :phone "+3312345678",
+  ;;      :pwd-changed-time "2018-09-06T22:00:08Z",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-09-07T00:00:08Z",
+  ;;      :server "server1"}
+  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user-pwd-reset pool "user22@domain2.com" "world")
-  ;; => [["server2"
-  ;;      {:uid "Us22",
-  ;;       :description "This is User22's description",
-  ;;       :mail "user22@domain2.com",
-  ;;       :phone "+3387654321",
-  ;;       :pwd-changed-time "2018-08-26T22:50:51Z",
-  ;;       :pwd-max-age 28800,
-  ;;       :pwd-expiration-date "2018-08-27T06:50:51Z"}]
+  ;; => [{:uid "Us22",
+  ;;      :description "This is User22's description",
+  ;;      :mail "user22@domain2.com",
+  ;;      :phone "+3387654321",
+  ;;      :pwd-changed-time "2018-09-06T22:00:25Z",
+  ;;      :pwd-max-age 28800,
+  ;;      :pwd-expiration-date "2018-09-07T06:00:25Z",
+  ;;      :server "server2"}
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))")]
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636")]
 
   (dir/user-pwd-update pool "toto@titi.fr" "hello" "world")
   ;; => [nil
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user-pwd-update pool (:mail user11) "toto" "world")
   ;; => [nil
   ;;     ("server1: Invalid credentials"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user-pwd-update pool (:mail user11) "hello" "world")
   ;; => [nil
   ;;     ("server1: Password fails quality checking policy"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user-pwd-update pool (:mail user11) "hello" "Password12")
-  ;; => [["server1"
-  ;;      {:uid "us11",
-  ;;       :description "This is User11's description",
-  ;;       :mail "user11@domain1.com",
-  ;;       :phone "+3312345678",
-  ;;       :pwd-changed-time "2018-08-26T22:52:06Z",
-  ;;       :pwd-max-age 7200,
-  ;;       :pwd-expiration-date "2018-08-27T00:52:06Z"}]
-  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))"
+  ;; => [{:uid "us11",
+  ;;      :description "This is User11's description",
+  ;;      :mail "user11@domain1.com",
+  ;;      :phone "+3312345678",
+  ;;      :pwd-changed-time "2018-09-06T22:01:48Z",
+  ;;      :pwd-max-age 7200,
+  ;;      :pwd-expiration-date "2018-09-07T00:01:48Z",
+  ;;      :server "server1"}
+  ;;     ("bad-server: An error occurred while attempting to connect to server localhost:1636"
   ;;      "server2: User not found")]
 
   (dir/user-pwd-update pool "user22@domain2.com" "world" "Password21")
-  ;; => [["server2"
-  ;;      {:uid "Us22",
-  ;;       :description "This is User22's description",
-  ;;       :mail "user22@domain2.com",
-  ;;       :phone "+3387654321",
-  ;;       :pwd-changed-time "2018-08-26T22:52:33Z",
-  ;;       :pwd-max-age 28800,
-  ;;       :pwd-expiration-date "2018-08-27T06:52:33Z"}]
+  ;; => [{:uid "Us22",
+  ;;      :description "This is User22's description",
+  ;;      :mail "user22@domain2.com",
+  ;;      :phone "+3387654321",
+  ;;      :pwd-changed-time "2018-09-06T22:02:12Z",
+  ;;      :pwd-max-age 28800,
+  ;;      :pwd-expiration-date "2018-09-07T06:02:12Z",
+  ;;      :server "server2"}
   ;;     ("server1: User not found"
-  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636:  IOException(LDAPException(resultCode=91 (connect error), errorMessage='An error occurred while attempting to establish a connection to server localhost/127.0.0.1:1636:  ConnectException(Connection refused (Connection refused)), ldapSDKVersion=4.0.4, revision=27051'))")]
+  ;;      "bad-server: An error occurred while attempting to connect to server localhost:1636")]
 
   )

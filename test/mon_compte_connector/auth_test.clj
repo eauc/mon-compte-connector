@@ -59,19 +59,19 @@
                    :store (atom {})
                    :gen-key (constantly "secretKey")}]
 
-      (is (= 342117
+      (is (= {:code 342117 :user {:mail "user11@domain1.com"}}
              (result/value (user-code {:mail "user11@domain1.com"} options))))
       (is (= {"user11@domain1.com" "secretKey"}
              (deref (:store options))))
 
-      (is (= 342117
+      (is (= {:code 342117 :user {:mail "user11@domain1.com"}}
              (result/value (user-code {:mail "user11@domain1.com"}
                                       (assoc options :date (Date. 290000)))))
           "within same time-step")
       (is (= {"user11@domain1.com" "secretKey"}
              (deref (:store options))))
 
-      (is (= 439975
+      (is (= {:code 439975 :user {:mail "user11@domain1.com"}}
              (result/value (user-code {:mail "user11@domain1.com"}
                                       (assoc options :date (Date. 310000)))))
           "within another time-step")))
@@ -82,27 +82,27 @@
                    :date (Date. 0)
                    :store (atom {"user11@domain1.com" "secretKey"})
                    :gen-key (constantly "anotherKey")}
-          user {:mail "user11@domain1.com"}]
+          mail "user11@domain1.com"]
 
-      (is (= (->result user)
-             (user-code-valid? user 342117 options)))
+      (is (= (->result mail)
+             (user-code-valid? mail 342117 options)))
 
-      (is (= (->result user)
-             (user-code-valid? user 342117
+      (is (= (->result mail)
+             (user-code-valid? mail 342117
                                (assoc options :date (Date. 290000))))
           "before expiration")
 
       (is (= (result/make-result nil ["Code is invalid"])
-             (user-code-valid? user 342117
+             (user-code-valid? mail 342117
                                (assoc options :date (Date. 310000))))
           "after expiration")
 
       (is (= (result/make-result nil ["Code is invalid"])
-             (user-code-valid? (assoc user :mail "user22@domain2.com") 123456 options))
+             (user-code-valid? "user22@domain2.com" 123456 options))
           "another user")
 
       (is (= (result/make-result nil ["Code is invalid"])
-             (user-code-valid? user 123456
+             (user-code-valid? mail 123456
                                (assoc options :date (Date. 310000))))
           "invalid code")))
 
@@ -113,14 +113,14 @@
                    :alg :hs256
                    :store (atom {})
                    :now now}
-          user {:mail "user11@domain1.com"}
-          {:keys [token]} (result/value (one-time-token user options))]
+          mail "user11@domain1.com"
+          {:keys [token]} (result/value (one-time-token mail options))]
 
-      (is (= (->result user)
-             (one-time-claim user token options)))
+      (is (= (->result {:exp 529646617 :mail mail})
+             (one-time-claim mail token options)))
 
       (is (= (->errors ["One-time token is invalid"])
-             (one-time-claim user token
+             (one-time-claim mail token
                              (assoc options :now (time/plus now (time/seconds 9)))))
           "token is valid only one time"))
 
@@ -130,29 +130,29 @@
                    :alg :hs256
                    :store (atom {})
                    :now now}
-          user {:mail "user11@domain1.com"}
-          {:keys [token]} (result/value (one-time-token user options))]
+          mail "user11@domain1.com"
+          {:keys [token]} (result/value (one-time-token mail options))]
 
       (is (= (->errors ["Token is expired (529646617)"])
-             (one-time-claim user token
+             (one-time-claim mail token
                              (assoc options :now (time/plus now (time/seconds 11)))))
           "token is expired")
 
       (is (= (->errors ["Message seems corrupt or manipulated."])
-             (one-time-claim user "toto" options))
+             (one-time-claim mail "toto" options))
           "token is invalid")
 
       (is (= (->errors ["Message seems corrupt or manipulated."])
-             (one-time-claim user token (assoc options :alg :hs512)))
+             (one-time-claim mail token (assoc options :alg :hs512)))
           "alg is invalid")
 
       (is (= (->errors ["Message seems corrupt or manipulated."])
-             (one-time-claim user token (assoc options :secret "otherSecret")))
+             (one-time-claim mail token (assoc options :secret "otherSecret")))
           "secret is invalid")
 
       (is (= (->errors ["One-time token is invalid"])
-             (one-time-claim (assoc user :mail "user22@domain2.com") token options))
+             (one-time-claim "user22@domain2.com" token options))
           "other user")
 
-      (is (= (->result user)
-             (one-time-claim user token options))))))
+      (is (= (->result {:exp 529646617 :mail mail})
+             (one-time-claim mail token options))))))

@@ -98,7 +98,7 @@
 
       {:describe "success -> send reset"
        :result (result/make-result
-                 ["server2" {:user {:phone "+33123456789"} :code "456123"}]
+                 {:user {:phone "+33123456789"} :code "456123"}
                  ["error1" "error2"])
        :options {:domain "domain1.com" :device-uid "#deviceUid1"}
        :reset {:status "OK"
