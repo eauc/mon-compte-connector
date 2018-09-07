@@ -58,10 +58,10 @@
 
 
 (defn user-with-pwd-expiration-date
-  [user {:keys [config schema] :as directory}]
+  [user {:keys [config schema lget] :as directory}]
   (let [pwd-policy-schema (get schema :pwd-policy)]
     (err-> (pp/query user config pwd-policy-schema)
-           (ldap/get (conn directory))
+           (lget (conn directory))
            (pp/map-attributes pwd-policy-schema)
            (pp/expiration-date user pwd-policy-schema))))
 
@@ -85,13 +85,14 @@
   (->result user user-not-found))
 
 (defn user
-  [{:keys [schema] :as directory} filter]
+  [{:keys [schema search] :as directory} filter]
   (let [user-schema (get schema :user)]
     (err-> (->result (u/query directory filter))
-           (ldap/search (conn directory))
+           (search (conn directory))
            (first-user-found)
            (u/map-attributes user-schema)
-           (user-with-pwd-expiration-date directory))))
+           (user-with-pwd-expiration-date directory)
+           (#(->result (dissoc % :pwd-policy))))))
 
 (comment
   (dir/user directory #(dir/user-mail-filter % "toto@acme.com"))
@@ -150,14 +151,14 @@
 (def invalid-credentials "Invalid credentials")
 
 (defn check-user-auth
-  [{:keys [dn] :as user} pwd conn]
-  (err-> (ldap/bind? {:dn dn :pwd pwd} conn)
+  [{:keys [dn] :as user} pwd {:keys [bind?] :as directory}]
+  (err-> (bind? {:dn dn :pwd pwd} (conn directory))
          (#(if % (->result user) (->errors [invalid-credentials])))))
 
 (defn authenticated-user
-  [directory mail pwd]
-  (err-> (user directory (dir/user-mail-filter directory mail))
-         (check-user-auth pwd (conn directory))))
+  [{:keys [user-mail-filter] :as directory} mail pwd]
+  (err-> (user directory (user-mail-filter directory mail))
+         (check-user-auth pwd directory)))
 
 (comment
   (dir/authenticated-user directory "toto@acme.com" "Password1")
@@ -196,11 +197,11 @@
 
 
 (defn user-pwd-reset
-  [{:keys [schema] :as directory} mail new-pwd]
+  [{:keys [schema modify user-mail-filter] :as directory} mail new-pwd]
   (let [user-schema (:user schema)]
-    (err-> (user directory (dir/user-mail-filter directory mail))
+    (err-> (user directory (user-mail-filter directory mail))
            (p/reset-query user-schema new-pwd)
-           (ldap/modify (conn directory))
+           (modify (conn directory))
            (#(->result (:post-read %)))
            (u/map-attributes user-schema)
            (user-with-pwd-expiration-date directory))))
@@ -233,28 +234,31 @@
 
 
 (defn user-connection
-  [{:keys [dn] :as user} pwd pool]
-  (let [conn (.getConnection pool)
-        ok? (result/value (ldap/bind? {:dn dn :pwd pwd} conn))]
-    (if ok?
-      (->result [user conn])
-      (->errors [invalid-credentials]))))
+  [{:keys [dn] :as user} pwd {:keys [bind? get-connection] :as directory}]
+  (let [conn? (get-connection (conn directory))
+        result? (err-> conn?
+                       (#(bind? {:dn dn :pwd pwd} %)))]
+    (if-not (result/ok? conn?)
+      conn?
+      (if-not (and (result/ok? result?) (result/value result?))
+        (->errors [invalid-credentials])
+        (->result [user (result/value conn?)])))))
 
 (defn pwd-update
-  [[user user-conn] {:keys [schema] :as directory} new-pwd]
+  [[user user-conn] {:keys [schema modify release-connection] :as directory} new-pwd]
   (let [user-schema (:user schema)
-        result (err-> (p/reset-query user user-schema new-pwd)
-                      (ldap/modify user-conn)
-                      (#(->result (:post-read %)))
-                      (u/map-attributes user-schema))]
-    (.releaseAndReAuthenticateConnection (conn directory) user-conn)
-    result))
+        result? (err-> (p/reset-query user user-schema new-pwd)
+                       (modify user-conn)
+                       (#(->result (:post-read %)))
+                       (u/map-attributes user-schema))]
+    (release-connection (conn directory) user-conn)
+    result?))
 
 (defn user-pwd-update
-  [{:keys [schema] :as directory} mail pwd new-pwd]
+  [{:keys [schema user-mail-filter] :as directory} mail pwd new-pwd]
   (let [user-schema (:user schema)]
-    (err-> (user directory (dir/user-mail-filter directory mail))
-           (user-connection pwd (conn directory))
+    (err-> (user directory (user-mail-filter directory mail))
+           (user-connection pwd directory)
            (pwd-update directory new-pwd)
            (user-with-pwd-expiration-date directory))))
 
@@ -296,14 +300,16 @@
 
 
 (defn guard-conn
-  [fn {:keys [conn config] :as directory} & args]
+  [fn {:keys [conn config connect] :as directory} & args]
   (when (not (result/ok? @conn))
-    (reset! conn (ldap/connect config)))
+    (reset! conn (connect config)))
   (if (result/ok? @conn)
     (apply fn directory args)
     @conn))
 
-(defrecord LDAPDirectory [conn config schema]
+(defrecord LDAPDirectory [conn config schema
+                          connect get-connection release-connection
+                          bind? lget search modify user-mail-filter]
   DirectoryFilters
   (dir/user-mail-filter [this mail]
     (f/user-mail (get-in this [:schema :user]) mail))
@@ -325,7 +331,15 @@
     (result/make-result
       (map->LDAPDirectory {:conn (atom conn)
                            :config config
-                           :schema schema})
+                           :schema schema
+                           :connect ldap/connect
+                           :get-connection ldap/get-connection
+                           :release-connection ldap/release-connection
+                           :bind? ldap/bind?
+                           :lget ldap/get
+                           :search ldap/search
+                           :modify ldap/modify
+                           :user-mail-filter dir/user-mail-filter})
       (result/errors conn))))
 
 

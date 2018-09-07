@@ -39,6 +39,15 @@
   )
 
 
+(defn get-connection
+  [conn]
+  (catch-error #(.getConnection conn)))
+
+
+(defn release-connection
+  [pool conn]
+  (.releaseAndReAuthenticateConnection pool conn))
+
 
 (defn bind?
   [{:keys [dn pwd]} conn]
