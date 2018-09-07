@@ -1,6 +1,7 @@
 (defproject com.amaris.myaccount/connector "1.0.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojars.pntblnk/clj-ldap "0.0.16"]
+                 [clj-http "3.9.1"]
                  [clj-time "0.14.4"]
                  [buddy/buddy-sign "2.2.0"]
                  [one-time "0.4.0"]]
