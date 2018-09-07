@@ -48,7 +48,17 @@
                            "User not found"])
        :error {:status 401
                :body {:status "Unauthorized"
-                      :messages ["invalid credentials"]}}}))
+                      :messages ["invalid credentials"]}}}
+
+      {:result? (->errors ["Code is invalid"])
+       :error {:status 401
+               :body {:status "Unauthorized"
+                      :messages ["code is invalid"]}}}
+
+      {:result? (->errors ["One-time token is invalid"])
+       :error {:status 401
+               :body {:status "Unauthorized"
+                      :messages ["token is invalid"]}}}))
 
 
   (testing "user-token"

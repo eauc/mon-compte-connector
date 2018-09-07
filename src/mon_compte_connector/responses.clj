@@ -31,6 +31,12 @@
       (first (filter #(re-find #"Token is expired" %) errors))
       (unauthorized (->errors ["token is expired"]))
 
+      (first (filter #(re-find #"Code is invalid" %) errors))
+      (unauthorized (->errors ["code is invalid"]))
+
+      (first (filter #(re-find #"One-time token is invalid" %) errors))
+      (unauthorized (->errors ["token is invalid"]))
+
       (first (filter #(re-find #"Message seems corrupt" %) errors))
       (unauthorized (->errors ["invalid credentials"]))
 
