@@ -1,0 +1,9 @@
+{:server {:port 3000 :routes #ig/ref :routes}
+ :routes {:directories #ig/ref :directories}
+ :directories {:servers {:default {:host {:adress "localhost" :port 6389}
+                                   :num-connections 4
+                                   :bind-dn "cn=admin,dc=amaris,dc=ovh"
+                                   :password "KLD87cvU"
+                                   :schema :default}}
+               :schemas {:default {:base-cn "dc=amaris,dc=ovh"
+                                   :user {:mail "mail"}}}}}

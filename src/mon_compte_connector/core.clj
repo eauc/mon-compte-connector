@@ -1,5 +1,7 @@
 (ns mon-compte-connector.core
+  (:require [mon-compte-connector.app :as app])
   (:gen-class))
 
+
 (defn -main [& args]
-  (println "Welcome to my project! These are your args:" args))
+  (app/start (first args)))
