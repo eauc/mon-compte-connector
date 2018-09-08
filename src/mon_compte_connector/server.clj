@@ -4,6 +4,7 @@
             [ring.middleware.json :refer [wrap-json-params wrap-json-response]]
             [integrant.core :as ig]))
 
+
 (defmethod ig/init-key :server [_ {:keys [routes] :as config}]
   (let [handler (-> routes
                     wrap-json-response

@@ -12,16 +12,3 @@
     (if (nil? domain)
       (->errors ["mail format is invalid"])
       (->result domain))))
-
-(comment
-
-  (domain "user11@domain1.c")
-  ;; => [nil ["mail format is invalid"]]
-
-  (domain "user11@domain1.com")
-  ;; => ["domain1.com" nil]
-
-  (domain "user11@sub.domain1.com")
-  ;; => ["sub.domain1.com" nil]
-
-  )

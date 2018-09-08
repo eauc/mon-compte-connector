@@ -13,6 +13,7 @@
        (into {})
        (merge {:pwd-max-age :pwdMaxAge})))
 
+
 (defn query
   [user config pwd-policy-schema]
   (let [pwd-policy-dn (or (:pwd-policy user) (get config :default-pwd-policy))]
@@ -21,33 +22,16 @@
                  :attributes (vals (attributes pwd-policy-schema))})
               "missing password policy")))
 
-(comment
-  (query {:pwd-policy "cn=userPwdPolicy,dc=org"}
-         {:default-pwd-policy "cn=defaultPwdPolicy,dc=org"}
-         {:attributes {:pwd-max-age "-pwdMaxAge"}})
-  ;; => [{:dn "cn=userPwdPolicy,dc=org", :attributes (:-pwdMaxAge)} nil]
-  
-  (query {}
-         {:default-pwd-policy "cn=defaultPwdPolicy,dc=org"}
-         {:attributes {}})
-  ;; => [{:dn "cn=defaultPwdPolicy,dc=org", :attributes (:pwdMaxAge)} nil]
-
-  (query {}
-         {}
-         {:attributes {:pwd-max-age "-pwdMaxAge"}})
-  ;; => [nil ["missing password policy"]]
-
-  )
-
-
 
 (defn map-attributes
   [pwd-policy pwd-policy-schema]
   (->result (rename-keys pwd-policy (map-invert (attributes pwd-policy-schema)))))
 
+
 (defn format-date-time
   [date-time]
   (timef/unparse (timef/formatters :date-time-no-ms) date-time))
+
 
 (defn expiration-date
   [{:keys [pwd-max-age] :as pwd-policy}
@@ -66,19 +50,3 @@
     (catch Exception e
       (log/error e "Error calculating pwd expiration date")
       (->errors ["invalid pwd expiration date"]))))
-
-
-(comment
-  (expiration-date {:pwd-max-age "7200"}
-                   {:pwd-changed-time "20180821195506Z"}
-                   {})
-  ;; => [{:pwd-changed-time "2018-08-21T19:55:06Z",
-  ;;      :pwd-max-age 7200,
-  ;;      :pwd-expiration-date "2018-08-21T21:55:06Z"}
-  ;;     nil]
-  
-  (timef/show-formatters)
-  ;;    :date-time-no-ms                        2018-08-22T21:09:32Z
-  ;;    :basic-date-time-no-ms                  20180822T210932Z
-
-  )

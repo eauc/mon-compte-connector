@@ -3,6 +3,7 @@
            java.util.Date)
   (:require [buddy.sign.jwt :as jwt]
             [clj-time.core :as time]
+            [integrant.core :as ig]
             [one-time.core :as ot]
             [mon-compte-connector.result :as result :refer [->result ->errors]]))
 
@@ -25,56 +26,14 @@
       (->errors [(.getMessage e)]))))
 
 
-(comment
-
-  (def now (time/now))
-
-  (user-token {:mail "user11@domain1.com" :uid "us11"}
-              {:secret "mySecret"
-               :now now
-               :exp-delay (time/seconds 5)
-               :alg :hs256})
-  ;; => [{:user {:mail "user11@domain1.com", :uid "us11"},
-  ;;      :token
-  ;;      "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNTU0OTg5Nn0.9YFmw58RmVP7JvLGSc9ijXsS2r23Uzt3dnTRDtcKqJI"}
-  ;;     nil]
-
-  (def user11-token
-    (result/value
-      (user-token {:mail "user11@domain1.com" :uid "us11"}
-                  {:secret "mySecret"
-                   :now now
-                   :exp-delay (time/seconds 5)
-                   :alg :hs256})))
-
-  (user-claim (:token user11-token) {:secret "mySecret"
-                                     :now now
-                                     :alg :hs256})
-  ;; => [{:mail "user11@domain1.com", :uid "us11", :exp 1535549896} nil]
-
-  (user-claim (:token user11-token) {:secret "mySecret"
-                                     :now (time/plus now (time/seconds 6))
-                                     :alg :hs256})
-  ;; => [nil ["Token is expired (1535549896)"]]
-
-  (user-claim (:token user11-token) {:secret "mySecret"
-                                     :now (time/plus now (time/seconds 2))
-                                     :alg :hs512})
-  ;; => [nil ["Message seems corrupt or manipulated."]]
-
-  )
-
-
-(def users-keys (atom {}))
-
 (defn user-key
   [{:keys [mail]} {:keys [store gen-key]
-                   :or {store users-keys
-                        gen-key ot/generate-secret-key}}]
+                   :or {gen-key ot/generate-secret-key}}]
   (or (get @store mail)
       (let [key (gen-key)]
         (swap! store assoc mail key)
         key)))
+
 
 (defn user-code
   [user {:keys [gen-key store] :as options}]
@@ -85,7 +44,9 @@
       {:user user
        :code code})))
 
+
 (def code-invalid "Code is invalid")
+
 
 (defn user-code-valid?
   [mail code {:keys [store] :as options}]
@@ -95,33 +56,6 @@
       (->result mail)
       (->errors [code-invalid]))))
 
-(comment
-
-  (def test-options
-    {:date (Date. 0)
-     :time-step 5})
-
-  (user-code {:mail "user11@domain1.com"} test-options)
-  ;; => [177403 nil]
-
-  (def test-code
-    (result/value
-      (user-code {:mail "user11@domain1.com"} test-options)))
-
-  (user-code-valid? {:mail "user11@domain1.com"} test-code test-options)
-  ;; => [{:mail "user11@domain1.com"} nil]
-
-  (user-code-valid? {:mail "user11@domain1.com"} test-code
-                    (assoc test-options :date (Date. 10000)))
-  ;; => [nil ["Code is invalid"]]
-
-  (user-code-valid? {:mail "user11@domain1.com"} 123456 test-options)
-  ;; => [nil ["Code is invalid"]]
-
-  )
-
-
-(def one-time-tokens (atom {}))
 
 (defn one-time-token
   [mail {:keys [now exp-delay secret store] :as options :or {now (time/now)}}]
@@ -131,7 +65,9 @@
     (->result
       {:token token})))
 
+
 (def ott-invalid "One-time token is invalid")
+
 
 (defn one-time-claim
   [mail token {:keys [secret store] :as options}]
@@ -150,37 +86,8 @@
             claim?))))))
 
 
-(comment
-
-  (def test-ott-options
-    {:secret "mySecret"
-     :exp-delay (time/seconds 10)
-     :alg :hs256
-     :store one-time-tokens})
-
-  (one-time-token "user11@domain1.com" test-ott-options)
-  ;; => [{:token
-  ;;      "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwiZXhwIjoxNTM2MTg0NzMyfQ.X4tZDqfkmeGERFFFumhXM_lm0-1QxSnjRocvP30W9Zg"}
-  ;;     nil]
-
-  (def test-ott
-    (result/value
-      (one-time-token "user11@domain1.com" test-ott-options)))
-
-  (one-time-claim {:token (:token test-ott)
-                   :mail "user11@domain1.com"} (dissoc test-ott-options :now))
-  ;; => ["user11@domain1.com" nil]
-
-  (one-time-claim {:token (:token test-ott)
-                   :mail "user11@domain1.com"} (dissoc test-ott-options :now))
-  ;; => [nil ["One-time token is invalid"]]
-
-  (one-time-claim {:token (:token test-ott)
-                   :mail "user11@domain1.com"} (dissoc test-ott-options :now))
-  ;; => [nil ["Token is expired (1536184740)"]]
-
-  (list test-ott)
-
-  (deref one-time-tokens)
-
-  )
+(defmethod ig/init-key :auth [_ {:keys [code token] :as config}]
+  {:code (assoc code :store (atom {}))
+   :token (assoc token
+                 :store (atom {})
+                 :exp-delay (time/seconds (:exp-delay token)))})

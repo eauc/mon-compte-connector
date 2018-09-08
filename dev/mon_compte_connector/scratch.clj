@@ -1,4 +1,4 @@
-(ns mon-compte-connector.test
+(ns mon-compte-connector.scratch
   (:import clojure.lang.ExceptionInfo)
   (:require [clj-ldap.client :as ldap]
             [clj-http.client :as client]

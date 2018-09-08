@@ -40,3 +40,8 @@
     (on-pool pool dir/user-pwd-reset mail new-pwd))
   (dir/user-pwd-update [pool mail pwd new-pwd]
     (on-pool pool dir/user-pwd-update mail pwd new-pwd)))
+
+
+(defn close
+  [pool]
+  (on-pool pool close))

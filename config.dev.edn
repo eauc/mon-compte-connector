@@ -1,2 +1,6 @@
 {:server {:port 3000 :routes #ig/ref :routes}
- :routes {}}
+ :routes {}
+ :auth {:code {:time-step 300}
+        :token {:secret "mySecret"
+                :alg :hs256
+                :exp-delay 60}}}
