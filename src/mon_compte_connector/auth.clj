@@ -98,8 +98,14 @@
             claim?))))))
 
 
+(def users-keys-store (atom {}))
+(def ott-store (atom {}))
+
+
 (defmethod ig/init-key :auth [_ {:keys [code token] :as config}]
-  {:code (assoc code :store (atom {}))
-   :token (assoc token
-                 :store (atom {})
-                 :exp-delay (time/seconds (:exp-delay token)))})
+  (let [base-code (assoc code :store users-keys-store)
+        base-token (assoc token
+                          :store ott-store
+                          :exp-delay (time/seconds (:exp-delay token)))]
+    {:code #(assoc base-code :date (Date.))
+     :token #(assoc base-token :now (time/now))}))

@@ -21,7 +21,7 @@
                         :result result} (str "Send " path " success"))
              result))
           ->result)
-      (catch ExceptionInfo e
+      (catch Exception e
         (log/error e (str "Send " path " error"))
         (->errors [(.getMessage e)])))))
 

@@ -3,7 +3,7 @@
 :user_pass = Password11
 :user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
 :device-uid = yrn8932n7m0rx49t048x80t35300
-:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjQ1MzI0N30.pB4fECfmQIfWu5IzgZmaxDj6YO4uEAbWmUkwSA1fDE0
+:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjQ1ODUwNH0.ewfY-ct9sCj6XkJih2x9YuUr5oFmfjum6PJFV1W-C14
 
 # Create auth token
 
@@ -151,7 +151,7 @@ X-MyAccountApp-Device-ID: :device-uid
 
 {
   "mail": "user22@domain2.com",
-  "code": 572309
+  "code": 4888
 }
 
 # Reset password
@@ -162,6 +162,6 @@ X-MyAccountApp-Device-ID: :device-uid
 
 {
   "mail": "user22@domain2.com",
-  "OTT": "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjIyQGRvbWFpbjIuY29tIiwiZXhwIjoxNTM2NDU3MTA5fQ.Ap3eLeB50zDdHE3tPyrd6S_6s_XTb1H7GBzEyJyl9Jo",
+  "OTT": "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjIyQGRvbWFpbjIuY29tIiwiZXhwIjoxNTM2NDU4NTUyfQ.tVJroaU6L6WFJtk-RGKPdGYFoR5rtSuvBwpX3oc3OYY",
   "newPassword": "hello"
 }
