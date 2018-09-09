@@ -1,6 +1,8 @@
 (ns mon-compte-connector.ldap-directory
   (:import com.unboundid.ldap.sdk.Filter)
-  (:require [clojure.tools.logging :as log]
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.tools.logging :as log]
+            [integrant.core :as ig]
             [mon-compte-connector.result :as result :refer [->result ->errors err->]]
             [mon-compte-connector.directory :as dir :refer [Directory DirectoryFilters]]
             [mon-compte-connector.directory-pool :as dir-pool :refer [->DirectoryPool]]
@@ -21,11 +23,15 @@
 
 (defn user-with-pwd-expiration-date
   [user {:keys [config schema lget] :as directory}]
-  (let [pwd-policy-schema (get schema :pwd-policy)]
-    (err-> (pp/query user config pwd-policy-schema)
-           (lget (conn directory))
-           (pp/map-attributes pwd-policy-schema)
-           (pp/expiration-date user pwd-policy-schema))))
+  (let [pwd-policy-schema (get schema :pwd-policy)
+        pwd-policy? (err-> (pp/query user config pwd-policy-schema)
+                           (lget (conn directory)))]
+    (if (and (not (result/ok? pwd-policy?))
+             (nil? (result/errors pwd-policy?)))
+      (->errors ["password policy not found"])
+      (err-> pwd-policy?
+             (pp/map-attributes pwd-policy-schema)
+             (pp/expiration-date user pwd-policy-schema)))))
 
 
 (def user-not-found "User not found")
@@ -168,3 +174,19 @@
            (map (fn [[k v]] (map #(str k ": " %) (result/errors v))))
            flatten
            (filter (fn [[k v]] (not (nil? v))))))))
+
+
+(defmethod ig/init-key :directories [_ {:keys [servers schemas]}]
+  (let [configs (map (fn [[name {:keys [schema] :as config}]]
+                       [name {:config (dissoc config :schema)
+                              :schema (get schemas schema (get schema :default))}]) servers)
+        pool? (make-directory-pool configs)]
+    (println "Directories configs...")
+    (pprint configs)
+    (println "Directories init logs...")
+    (pprint (result/errors pool?))
+    (result/value pool?)))
+
+
+(defmethod ig/halt-key! :directories [_ pool]
+  (dir-pool/close pool))

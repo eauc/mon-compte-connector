@@ -1,11 +1,21 @@
 (ns mon-compte-connector.auth
   (:import clojure.lang.ExceptionInfo
            java.util.Date)
-  (:require [buddy.sign.jwt :as jwt]
+  (:require [buddy.auth.backends :as backends]
+            [buddy.sign.jwt :as jwt]
             [clj-time.core :as time]
             [integrant.core :as ig]
             [one-time.core :as ot]
             [mon-compte-connector.result :as result :refer [->result ->errors]]))
+
+
+(defn basic-auth
+  [request authdata]
+  {:mail (:username authdata)
+   :pwd (:password authdata)})
+
+
+(def basic-backend (backends/basic {:authfn basic-auth}))
 
 
 (defn user-token
@@ -19,11 +29,13 @@
 
 (defn user-claim
   [token {:keys [secret] :as options}]
-  (try
-    (->result
-      (jwt/unsign token secret (dissoc options :secret)))
-    (catch ExceptionInfo e
-      (->errors [(.getMessage e)]))))
+  (if (empty? token)
+    (->errors ["token is invalid"])
+    (try
+      (->result
+        (jwt/unsign token secret (dissoc options :secret)))
+      (catch ExceptionInfo e
+        (->errors [(.getMessage e)])))))
 
 
 (defn user-key

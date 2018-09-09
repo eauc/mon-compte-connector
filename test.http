@@ -1,9 +1,167 @@
-:user_mail = user1@myDomain.com
-:user_pass = Password1
-:user_basic = dXNlcjFAbXlEb21haW4uY29tOlBhc3N3b3JkMQ==
+:base_url = http://localhost:8080
+:user_mail = user11@domain1.com
+:user_pass = Password11
+:user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
+:device-uid = yrn8932n7m0rx49t048x80t35300
+:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjQ1MzI0N30.pB4fECfmQIfWu5IzgZmaxDj6YO4uEAbWmUkwSA1fDE0
 
-# Create token
+# Create auth token
 
-GET http://localhost:3000/token
+POST :base_url/v1/auth/token
 Content-Type: application/json
 Authorization: Basic :user_basic
+X-MyAccountApp-Device-ID: :device-uid
+
+# Create auth token - mail invalid
+
+POST :base_url/v1/auth/token
+Content-Type: application/json
+Authorization: Basic dXNlcjGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
+X-MyAccountApp-Device-ID: :device-uid
+
+# Create auth token - not found
+
+POST :base_url/v1/auth/token
+Content-Type: application/json
+Authorization: Basic dXNlckBkb21haW4xLmNvbTpQYXNzd29yZDEx
+X-MyAccountApp-Device-ID: :device-uid
+
+# Create auth token - invalid credentials
+
+POST :base_url/v1/auth/token
+Content-Type: application/json
+Authorization: Basic dXNlcjExQGRvbWFpbjEuY29tOlBhc3JkMTE=
+X-MyAccountApp-Device-ID: :device-uid
+
+# Get user info
+
+GET :base_url/v1/me
+Content-Type: application/json
+Authorization: Bearer :token
+X-MyAccountApp-Device-ID: :device-uid
+
+# Get user info - invalid auth header
+
+GET :base_url/v1/me
+Content-Type: application/json
+Authorization: toto
+X-MyAccountApp-Device-ID: :device-uid
+
+# Get user info - invalid token
+
+GET :base_url/v1/me
+Content-Type: application/json
+Authorization: Bearer nciwpinuicpuivhfyuvh
+X-MyAccountApp-Device-ID: :device-uid
+
+# Change user password
+
+PUT :base_url/v1/me/password
+Content-Type: application/json
+Authorization: Bearer :token
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "oldPassword": "Password11",
+  "newPassword": "NewPassword11"
+}
+
+# Change user password - invalid auth header
+
+PUT :base_url/v1/me/password
+Content-Type: application/json
+Authorization: toto
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "oldPassword": "Password11",
+  "newPassword": "NewPassword11"
+}
+
+# Change user password - invalid token
+
+PUT :base_url/v1/me/password
+Content-Type: application/json
+Authorization: Bearer nciwpinuicpuivhfyuvh
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "oldPassword": "Password11",
+  "newPassword": "NewPassword11"
+}
+
+# Change user password - missing password
+
+PUT :base_url/v1/me/password
+Content-Type: application/json
+Authorization: Bearer :token
+X-MyAccountApp-Device-ID: :device-uid
+
+{}
+
+# Change user password - invalid old password
+
+PUT :base_url/v1/me/password
+Content-Type: application/json
+Authorization: Bearer :token
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "oldPassword": "toto",
+  "newPassword": "NewPassword11"
+}
+
+# Change user password - invalid new password
+
+PUT :base_url/v1/me/password
+Content-Type: application/json
+Authorization: Bearer :token
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "oldPassword": "NewPassword11",
+  "newPassword": "Password11"
+}
+
+# Get Reset code
+
+POST :base_url/v1/reset/code
+Content-Type: application/json
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "mail": "user22@domain2.com"
+}
+
+# Get Reset code - not found
+
+POST :base_url/v1/reset/code
+Content-Type: application/json
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "mail": "undefined@domain2.com"
+}
+
+# Get OTT
+
+POST :base_url/v1/reset/token
+Content-Type: application/json
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "mail": "user22@domain2.com",
+  "code": 572309
+}
+
+# Reset password
+
+POST :base_url/v1/reset/password
+Content-Type: application/json
+X-MyAccountApp-Device-ID: :device-uid
+
+{
+  "mail": "user22@domain2.com",
+  "OTT": "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjIyQGRvbWFpbjIuY29tIiwiZXhwIjoxNTM2NDU3MTA5fQ.Ap3eLeB50zDdHE3tPyrd6S_6s_XTb1H7GBzEyJyl9Jo",
+  "newPassword": "hello"
+}

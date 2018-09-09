@@ -1,5 +1,6 @@
 (ns mon-compte-connector.services
-  (:require [mon-compte-connector.admin :as adm]
+  (:require [clojure.pprint :refer [pprint]]
+            [mon-compte-connector.admin :as adm]
             [mon-compte-connector.auth :as auth]
             [mon-compte-connector.directory :as dir]
             [mon-compte-connector.event-log :as evl]
@@ -11,7 +12,8 @@
 (defn user-login
   [{:keys [mail pwd device-uid]} {:keys [admin auth-options pool]}]
   (let [domain? (util/domain mail)
-        result? (err-> (dir/authenticated-user pool mail pwd)
+        result? (err-> (if (r/ok? domain?) (->result pool) domain?)
+                       (dir/authenticated-user mail pwd)
                        (auth/user-token auth-options))]
     (-> (if-not (r/ok? domain?) domain? result?)
         (evl/notification {:user-path [:user]
@@ -77,7 +79,7 @@
                        (#(->result (:mail %)))
                        (#(dir/user-pwd-reset pool % new-pwd)))]
     (-> (if-not (r/ok? claim?) claim? result?)
-        (evl/notification {:type "resetPassword"
+        (evl/notification {:type "passwordReset"
                         :domain (r/value domain? "N/A")
                         :device-uid device-uid})
         (#(adm/send-notification admin %)))
@@ -85,13 +87,13 @@
 
 
 (defn change-pwd
-  [{:keys [mail token pwd new-pwd device-uid]} {:keys [admin auth-options pool]}]
-  (let [domain? (util/domain mail)
-        result? (err-> (auth/user-claim token auth-options)
-                       (#(:mail %))
-                       (#(dir/user-pwd-update pool % pwd new-pwd)))]
+  [{:keys [token pwd new-pwd device-uid]} {:keys [admin auth-options pool]}]
+  (let [mail? (err-> (auth/user-claim token auth-options)
+                     (#(->result (:mail %))))
+        domain? (err-> mail? (util/domain))
+        result? (err-> mail? (#(dir/user-pwd-update pool % pwd new-pwd)))]
     (-> result?
-        (evl/notification {:type "changePassword"
+        (evl/notification {:type "passwordChange"
                            :domain (r/value domain? "N/A")
                            :device-uid device-uid})
         (#(adm/send-notification admin %)))

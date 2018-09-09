@@ -2,25 +2,28 @@
   (:import clojure.lang.ExceptionInfo)
   (:require [clj-http.client :as client]
             [clojure.tools.logging :as log]
+            [integrant.core :as ig]
             [mon-compte-connector.result :refer [->errors ->result]]))
 
 
-(defn send
+(defn -send
   [params path {:keys [base-url] :as admin}]
-  (try
-    (-> (client/post (str base-url "/v1" path)
-                     {:form-params params
-                      :content-type :json
-                      :as :json})
-        :body
-        ((fn [result]
-           (log/info {:notification params
-                      :result result} (str "Send " path " success"))
-           result))
-        ->result)
-    (catch ExceptionInfo e
-      (log/error e (str "Send " path " error"))
-      (->errors [(.getMessage e)]))))
+  (let [url (str base-url "/v1" path)
+        request {:form-params params
+                 :content-type :json
+                 :as :json}]
+    (log/info {:url url :request request} "Sending request to admin")
+    (try
+      (-> (client/post url request)
+          :body
+          ((fn [result]
+             (log/info {:notification params
+                        :result result} (str "Send " path " success"))
+             result))
+          ->result)
+      (catch ExceptionInfo e
+        (log/error e (str "Send " path " error"))
+        (->errors [(.getMessage e)])))))
 
 
 (defprotocol AdminAPI
@@ -29,8 +32,12 @@
   (send-reset-code [this reset-code] "Send reset code request"))
 
 
-(defrecord admin [base-url]
+(defrecord Admin [base-url]
   AdminAPI
-  (send-log [this log] (send "/connectors/log" log this))
-  (send-notification [this notification] (send "/notifications" notification this))
-  (send-reset-code [this reset-code] (send "/reset/code" reset-code this)))
+  (send-log [this log] (-send log "/connectors/log" this))
+  (send-notification [this notification] (-send notification "/notifications" this))
+  (send-reset-code [this reset-code] (-send reset-code "/reset/code" this)))
+
+
+(defmethod ig/init-key :admin [_ {:keys [base-url] :as config}]
+  (Admin. base-url))

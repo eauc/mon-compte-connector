@@ -1,6 +1,7 @@
 (ns mon-compte-connector.responses
   (:require [clojure.set :as set]
-            [mon-compte-connector.result :as r :refer [->errors ->result]]))
+            [mon-compte-connector.result :as r :refer [err-> ->errors ->result]]
+            [mon-compte-connector.result :as result]))
 
 
 (defn bad-request
@@ -24,32 +25,56 @@
           :messages (r/errors result?)}})
 
 
+(defn user-error-token-expired
+  [errors]
+  (let [expired? (first (filter #(re-find #"Token is expired" %) errors))]
+    (if expired?
+      (->errors [(unauthorized (->errors ["token is expired"]))])
+      (->result errors))))
+
+
+(defn user-error-invalid
+  [errors]
+  (let [invalid? (first (filter #(re-find #"is invalid" %) errors))]
+    (if invalid?
+      (->errors [(unauthorized (->errors [invalid?]))])
+      (->result errors))))
+
+
+(defn user-error-pwd-check
+  [errors]
+  (let [pwd-check? (first (filter #(re-find #"Password" %) errors))
+        [_ message] (when pwd-check? (re-matches #".*(Password.*)" pwd-check?))]
+    (if pwd-check?
+      (->errors [(bad-request (->errors [message]))])
+      (->result errors))))
+
+
+(defn user-error-credentials
+  [errors]
+  (let [credentials? (or (first (filter #(re-find #"Message seems corrupt" %) errors))
+                         (first (filter #(re-find #"Invalid credentials" %) errors))
+                         (every? #(re-find #"User not found" %) errors))]
+    (if credentials?
+      (->errors [(unauthorized (->errors ["invalid credentials"]))])
+      (->result errors))))
+
+
+(defn user-error-default
+  [errors]
+  (->errors [(internal-error (->errors ["internal server error"]))]))
+
+
 (defn user-error
   [result?]
-  (let [errors (r/errors result?)]
-    (cond
-      (first (filter #(re-find #"Token is expired" %) errors))
-      (unauthorized (->errors ["token is expired"]))
-
-      (first (filter #(re-find #"Code is invalid" %) errors))
-      (unauthorized (->errors ["code is invalid"]))
-
-      (first (filter #(re-find #"One-time token is invalid" %) errors))
-      (unauthorized (->errors ["token is invalid"]))
-
-      (first (filter #(re-find #"Message seems corrupt" %) errors))
-      (unauthorized (->errors ["invalid credentials"]))
-
-      (first (filter #(re-find #"Invalid credentials" %) errors))
-      (unauthorized (->errors ["invalid credentials"]))
-
-      (first (filter #(re-find #"^Password" %) errors))
-      (bad-request (->errors [(first (filter #(re-find #"^Password" %) errors))]))
-
-      (every? #(re-find #"User not found" %) errors)
-      (unauthorized (->errors ["invalid credentials"]))
-
-      :else (internal-error (->errors ["internal server error"])))))
+  (let [errors (r/errors result?)
+        response? (err-> (->result errors)
+                         (user-error-token-expired)
+                         (user-error-pwd-check)
+                         (user-error-invalid)
+                         (user-error-credentials)
+                         (user-error-default))]
+    (first (result/errors response?))))
 
 
 (defn user

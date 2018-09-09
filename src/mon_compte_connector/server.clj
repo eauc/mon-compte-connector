@@ -1,12 +1,15 @@
 (ns mon-compte-connector.server
-  (:require [ring.adapter.jetty :refer [run-jetty]]
+  (:require [buddy.auth.middleware :refer [wrap-authentication]]
+            [integrant.core :as ig]
+            [mon-compte-connector.auth :as auth]
+            [ring.adapter.jetty :refer [run-jetty]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
-            [ring.middleware.json :refer [wrap-json-params wrap-json-response]]
-            [integrant.core :as ig]))
+            [ring.middleware.json :refer [wrap-json-params wrap-json-response]]))
 
 
 (defmethod ig/init-key :server [_ {:keys [routes] :as config}]
   (let [handler (-> routes
+                    (wrap-authentication auth/basic-backend)
                     wrap-json-response
                     wrap-json-params
                     (wrap-defaults api-defaults))

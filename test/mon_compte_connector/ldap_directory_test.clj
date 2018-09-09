@@ -120,6 +120,25 @@
           (is (= nil (:lget @calls))
               "should not retrieve the default pwd policy")))
 
+      (testing "pwd policy not found"
+        (let [calls (atom {})
+              directory (merge
+                          directory-base
+                          {:schema {:user {:attributes {:phone "mobile"}}
+                                    :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
+                           :search (mock calls :search
+                                         (->result
+                                           [{:description "This is John Doe's description",
+                                             :mail "user1@myDomain.com",
+                                             :pwdPolicySubentry "pwd-policy-user"
+                                             :pwdChangedTime "20180821105506Z",
+                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                             :mobile "+3312345678"}]))
+                           :lget (mock calls :lget (->result nil))})]
+
+          (is (= [nil ["password policy not found"]]
+                 (user directory "test-filter")))))
+
       (testing "pwd policy error"
         (let [calls (atom {})
               directory (merge

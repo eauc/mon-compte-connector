@@ -2,6 +2,8 @@
   (:require [clojure.pprint :refer [pprint]]
             [integrant.core :as ig]
             [mon-compte-connector.auth]
+            [mon-compte-connector.admin]
+            [mon-compte-connector.ldap-directory]
             [mon-compte-connector.routes]
             [mon-compte-connector.server]))
 

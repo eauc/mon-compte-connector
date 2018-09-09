@@ -3,6 +3,7 @@
                  [org.clojars.pntblnk/clj-ldap "0.0.16"]
                  [clj-http "3.9.1"]
                  [clj-time "0.14.4"]
+                 [buddy/buddy-auth "2.1.0"]
                  [buddy/buddy-sign "2.2.0"]
                  [integrant "0.6.3"]
                  [one-time "0.4.0"]

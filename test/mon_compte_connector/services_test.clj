@@ -99,7 +99,7 @@
 
         (is (= {:status 401,
                 :body {:status "Unauthorized",
-                       :messages ["invalid credentials"]}}
+                       :messages ["mail format is invalid"]}}
                (user-login {:mail "user1@domain1."
                             :pwd "userPass"
                             :device-uid "#deviceUid1"} options))
@@ -340,7 +340,7 @@
 
         (is (= {:status 401,
                 :body {:status "Unauthorized",
-                       :messages ["code is invalid"]}}
+                       :messages ["Code is invalid"]}}
                (reset-token {:mail "user1@domain1.com"
                              :code 123456
                              :device-uid "#deviceUid1"} options)))
@@ -377,7 +377,7 @@
 
         (is (= {:status 401,
                 :body {:status "Unauthorized",
-                       :messages ["token is invalid"]}}
+                       :messages ["One-time token is invalid"]}}
                (reset-pwd {:mail "user1@domain1.com"
                            :new-pwd "newPass"
                            :token token
@@ -391,13 +391,13 @@
                   :messages [],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "resetPassword"
+                  :type "passwordReset"
                   :passwordExpirationDate "2018-08-26T14:32:29Z"}]
                 [{:status "Error",
                   :messages ["One-time token is invalid"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "resetPassword"}]]
+                  :type "passwordReset"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -425,7 +425,7 @@
                   :messages ["Message seems corrupt or manipulated."],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "resetPassword"}]]
+                  :type "passwordReset"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -453,7 +453,7 @@
                   :messages ["connection error"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "resetPassword"}]]
+                  :type "passwordReset"}]]
                (:send-notification @calls))
             "should log success"))))
 
@@ -479,8 +479,7 @@
                               :passwordChangedTime "2018-08-26T12:32:29Z",
                               :passwordMaxAge 7200,
                               :passworddExpirationDate "2018-08-26T14:32:29Z"}}}
-               (change-pwd {:mail "user1@domain1.com"
-                            :old-pwd "oldPass"
+               (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token token
                             :device-uid "#deviceUid1"} options)))
@@ -489,7 +488,7 @@
                   :messages [],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "changePassword",
+                  :type "passwordChange",
                   :passwordExpirationDate "2018-08-26T14:32:29Z"}]]
                (:send-notification @calls))
             "should log success")))
@@ -508,17 +507,16 @@
         (is (= {:status 401,
                 :body {:status "Unauthorized",
                        :messages ["invalid credentials"]}}
-               (change-pwd {:mail "user1@domain1.com"
-                            :old-pwd "oldPass"
+               (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token "invalid"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["Message seems corrupt or manipulated."],
-                  :domain "domain1.com",
+                  :domain "N/A",
                   :deviceUid "#deviceUid1",
-                  :type "changePassword"}]]
+                  :type "passwordChange"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -538,8 +536,7 @@
         (is (= {:status 400,
                 :body {:status "BadRequest",
                        :messages ["Password does not pass the quality checks"]}}
-               (change-pwd {:mail "user1@domain1.com"
-                            :old-pwd "oldPass"
+               (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token token
                             :device-uid "#deviceUid1"} options)))
@@ -548,6 +545,6 @@
                   :messages ["Password does not pass the quality checks"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "changePassword"}]]
+                  :type "passwordChange"}]]
                (:send-notification @calls))
             "should log success")))))

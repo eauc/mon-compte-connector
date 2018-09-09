@@ -53,12 +53,17 @@
       {:result? (->errors ["Code is invalid"])
        :error {:status 401
                :body {:status "Unauthorized"
-                      :messages ["code is invalid"]}}}
+                      :messages ["Code is invalid"]}}}
 
       {:result? (->errors ["One-time token is invalid"])
        :error {:status 401
                :body {:status "Unauthorized"
-                      :messages ["token is invalid"]}}}))
+                      :messages ["One-time token is invalid"]}}}
+
+      {:result? (->errors ["mail is invalid"])
+       :error {:status 401
+               :body {:status "Unauthorized"
+                      :messages ["mail is invalid"]}}}))
 
 
   (testing "user-token"

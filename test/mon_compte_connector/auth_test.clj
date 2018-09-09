@@ -24,29 +24,40 @@
 
       (example
 
-        [options result]
+        [test-token options result]
 
-        (= result (user-claim (:token token) options))
+        (= result (user-claim test-token options))
 
         {:describe "ok"
+         :test-token (:token token)
          :options {:secret "mySecret"
                    :alg :hs256
                    :now (time/plus now (time/seconds 1))}
          :result [{:uid "userUid", :mail "user@mail.com" :exp 529646612} nil]}
 
         {:describe "invalid secred"
+         :test-token (:token token)
          :options {:secret "otherSecret"
                    :alg :hs256
                    :now (time/plus now (time/seconds 1))}
          :result [nil ["Message seems corrupt or manipulated."]]}
 
         {:describe "invalid algo"
+         :test-token (:token token)
          :options {:secret "mySecret"
                    :alg :hs512
                    :now (time/plus now (time/seconds 1))}
          :result [nil ["Message seems corrupt or manipulated."]]}
 
+        {:describe "invalid token"
+         :test-token nil
+         :options {:secret "mySecret"
+                   :alg :hs512
+                   :now (time/plus now (time/seconds 1))}
+         :result [nil ["token is invalid"]]}
+
         {:describe "token expired"
+         :test-token (:token token)
          :options {:secret "mySecret"
                    :alg :hs256
                    :now (time/plus now (time/seconds 6))}
