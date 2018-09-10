@@ -1,0 +1,75 @@
+{
+  "server": {
+    "port": 8080
+  },
+  "admin": {
+    "base-url": "http://localhost:3000"
+  },
+  "auth": {
+    "code": {
+      "time-step": 3600
+    },
+    "token": {
+      "secret": "mySecret",
+      "alg": "hs256",
+      "exp-delay": 3600
+    }
+  },
+  "directories": {
+    "servers": {
+      "server1": {
+        "host": {
+          "address": "localhost",
+          "port": 636
+        },
+        "ssl?": true,
+        "connect-timeout": 1000,
+        "timeout": 1000,
+        "bind-dn": "cn=admin,dc=domain1,dc=com",
+        "password": "ldap1AdminPwd",
+        "users-base-dn": "ou=Users,dc=domain1,dc=com",
+        "default-pwd-policy": "cn=passwordDefault,ou=pwpolicies,dc=domain1,dc=com",
+        "schema": "default"
+      },
+      "server2": {
+        "host": {
+          "address": "localhost",
+          "port": 1636
+        },
+        "ssl?": true,
+        "connect-timeout": 1000,
+        "timeout": 1000,
+        "bind-dn": "cn=admin,dc=amaris,dc=ovh",
+        "password": "KLD87cvU",
+        "users-base-dn": "dc=amaris,dc=ovh",
+        "default-pwd-policy": "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh",
+        "schema": "default"
+      },
+      "server3": {
+        "host": {
+          "address": "localhost",
+          "port": 637
+        },
+        "ssl?": true,
+        "connect-timeout": 1000,
+        "timeout": 1000,
+        "bind-dn": "cn=admin,dc=domain2,dc=com",
+        "password": "ldap2AdminPwd",
+        "users-base-dn": "ou=Persons,dc=domain2,dc=com",
+        "default-pwd-policy": "cn=ppDefault,ou=pwpolicies,dc=domain2,dc=com",
+        "schema": "default"
+      }
+    },
+    "schemas": {
+      "default": {
+        "user": {
+          "object-class": "person",
+          "attributes": {
+            "phone": "mobile"
+          }
+        },
+        "pwd-policy": {}
+      }
+    }
+  }
+}

@@ -20,7 +20,9 @@
 
 (defn start
   []
-  (reset! system (app/start "config.dev.edn")))
+  (reset! system (app/start {:config-file-path "config.dev.json"
+                             :certs-file-path "connector.p12"
+                             :certs-file-pwd "123456"})))
 
 
 (defn reset
