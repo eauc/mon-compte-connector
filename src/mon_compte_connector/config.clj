@@ -5,10 +5,13 @@
 
 
 (defn config
-  [config-file-path]
+  [{:keys [config-file-path certs-file-path certs-file-pwd]}]
   (let [raw-config (-> (io/reader config-file-path)
                        (cs/parse-stream true))]
     (-> raw-config
+        (assoc :certs {:certs-file-path certs-file-path
+                       :certs-file-pwd certs-file-pwd})
+        (assoc :admin {:certs (ig/ref :certs)})
         (assoc :routes {:admin (ig/ref :admin)
                         :auth (ig/ref :auth)
                         :directories (ig/ref :directories)})

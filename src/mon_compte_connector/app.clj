@@ -3,6 +3,7 @@
             [integrant.core :as ig]
             [mon-compte-connector.auth]
             [mon-compte-connector.admin]
+            [mon-compte-connector.certs]
             [mon-compte-connector.config :as cfg]
             [mon-compte-connector.ldap-directory]
             [mon-compte-connector.routes]
@@ -10,8 +11,8 @@
 
 
 (defn start
-  [{:keys [config-file-path]}]
-  (let [config (cfg/config config-file-path)]
+  [options]
+  (let [config (cfg/config options)]
     (println "Loading config...")
     (pprint config)
     (ig/init config)))

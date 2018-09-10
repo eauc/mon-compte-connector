@@ -1,0 +1,2 @@
+openssl pkcs12 -in acme.client.pem -inkey acme.key -name client-cert -export -out connector.p12
+keytool -importcert -alias server-cert -keystore connector.p12 -file ../admin/admin.server.pem

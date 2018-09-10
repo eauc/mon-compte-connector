@@ -7,11 +7,14 @@
 
 
 (defn -send
-  [params path {:keys [base-url] :as admin}]
+  [params path {:keys [base-url certs] :as admin}]
   (let [url (str base-url "/v1" path)
+        {:keys [keystore trust-store]} certs
         request {:form-params params
                  :content-type :json
-                 :as :json}]
+                 :as :json
+                 :keystore keystore
+                 :trust-store trust-store}]
     (log/info {:url url :request request} "Sending request to admin")
     (try
       (-> (client/post url request)
@@ -32,12 +35,12 @@
   (send-reset-code [this reset-code] "Send reset code request"))
 
 
-(defrecord Admin [base-url]
+(defrecord Admin [base-url certs]
   AdminAPI
   (send-log [this log] (-send log "/connectors/log" this))
   (send-notification [this notification] (-send notification "/notifications" this))
   (send-reset-code [this reset-code] (-send reset-code "/reset/code" this)))
 
 
-(defmethod ig/init-key :admin [_ {:keys [base-url] :as config}]
-  (Admin. base-url))
+(defmethod ig/init-key :admin [_ {:keys [base-url certs] :as config}]
+  (Admin. base-url (:client certs)))
