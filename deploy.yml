@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mon-compte-connector-clj
+  labels:
+    app: mon-compte
+    component: connector
+    branch: clj
+binaryData:
+  config.edn: ${CONFIG_FILE}
+  connector.p12: ${CERTS_FILE}
+
+---
+
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: mon-compte-connector-clj
+  labels:
+    app: mon-compte
+    component: connector
+    branch: clj
+spec:
+  selector:
+    matchLabels:
+      app: mon-compte
+      component: connector
+      branch: clj
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mon-compte
+        component: connector
+        branch: clj
+    spec:
+      containers:
+      - name: mon-compte-connector-clj
+        image: 127.0.0.1:5000/mon-compte-connector:clj
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: CODE_VERSION
+          value: ${CI_COMMIT_SHA}
+        - name: CONFIG_FILE
+          value: "/config/config.edn"
+        - name: CERTS_FILE_PASSWORD
+          value: ${CERTS_FILE_PASSWORD}
+        - name: CERTS_FILE
+          value: "/config/connector.p12"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: mon-compte-connector-clj
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mon-compte-connector-clj
+  labels:
+    app: mon-compte
+    component: connector
+    branch: clj
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: mon-compte
+    component: connector
+    branch: clj
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mon-compte-connector-clj
+  labels:
+    app: mon-compte
+    component: connector
+    branch: clj
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /mon-compte-connector/clj
+        backend:
+          serviceName: mon-compte-connector-clj
+          servicePort: 8080

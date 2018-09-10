@@ -1,0 +1,38 @@
+{:server {:port 8080 :routes #ig/ref :routes}
+ :routes {:admin #ig/ref :admin
+          :auth #ig/ref :auth
+          :directories #ig/ref :directories}
+ :admin {:base-url "http://mon-compte-admin-master:3000/mon-compte-admin/master"}
+ :auth {:code {:time-step 3600}
+        :token {:secret "mySecret"
+                :alg :hs256
+                :exp-delay 3600}}
+ :directories {:servers {:server1 {:host {:address "mon-compte-ldap1" :port 636}
+                                   :ssl? true
+                                   :connect-timeout 1000
+                                   :timeout 1000
+                                   :bind-dn "cn=admin,dc=domain1,dc=com"
+                                   :password "ldap1AdminPwd"
+                                   :users-base-dn "ou=Users,dc=domain1,dc=com"
+                                   :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=domain1,dc=com"
+                                   :schema :default}
+                         :server2 {:host {:address "mon-compte-ldap1" :port 1636}
+                                   :ssl? true
+                                   :connect-timeout 1000
+                                   :timeout 1000
+                                   :bind-dn "cn=admin,dc=amaris,dc=ovh"
+                                   :password "KLD87cvU"
+                                   :users-base-dn "dc=amaris,dc=ovh"
+                                   :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"}
+                         :server3 {:host {:address "mon-compte-ldap2" :port 636}
+                                   :ssl? true
+                                   :connect-timeout 1000
+                                   :timeout 1000
+                                   :bind-dn "cn=admin,dc=domain2,dc=com"
+                                   :password "ldap2AdminPwd"
+                                   :users-base-dn "ou=Persons,dc=domain2,dc=com"
+                                   :default-pwd-policy "cn=ppDefault,ou=pwpolicies,dc=domain2,dc=com"
+                                   :schema :default}}
+               :schemas {:default {:user {:object-class "person"
+                                          :attributes {:phone "mobile"}}
+                                   :pwd-policy {}}}}}
