@@ -16,7 +16,7 @@
                  :as :json
                  :keystore keystore
                  :keystore-pass keystore-pass
-                 :trust-store trust-store}]
+                 :trust-store keystore}]
     (log/info {:url url :request request} "Sending request to admin")
     (pprint {:url url :request request})
     (try

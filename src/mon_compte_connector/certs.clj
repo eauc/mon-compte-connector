@@ -17,31 +17,33 @@
           (let [private-key (.getKey keystore "server-cert" (.toCharArray certs-file-pwd))
                 client-cert (.getCertificateChain keystore "client-cert")
                 server-cert (.getCertificateChain keystore "server-cert")
-                admin-cert (.getCertificate keystore "admin-cert")
+                ;; admin-cert (.getCertificate keystore "admin-cert")
                 root-ca (.getCertificate keystore "root-ca")
                 amaris-ca (.getCertificate keystore "amaris-ca")]
             (cond
               (nil? private-key) (throw-error "private key not found")
               (nil? client-cert) (throw-error "client certificate not found")
               (nil? server-cert) (throw-error "server certificate not found")
-              (nil? admin-cert) (throw-error "admin certificate not found")
+              ;; (nil? admin-cert) (throw-error "admin certificate not found")
               (nil? root-ca) (throw-error "root-ca certificate not found")
               (nil? amaris-ca) (throw-error "amaris-ca certificate not found")
-              :else {:client {:keystore (doto (KeyStore/getInstance "PKCS12")
-                                          (.load nil nil)
-                                          (.setKeyEntry "client-cert" private-key
-                                                        (.toCharArray private-pwd) client-cert))
-                              :keystore-pass private-pwd
-                              :trust-store (doto (KeyStore/getInstance "PKCS12")
-                                             (.load nil nil)
-                                             (.setCertificateEntry "admin-cert" admin-cert))}
-                     :server {:keystore (doto (KeyStore/getInstance "PKCS12")
-                                          (.load nil nil)
-                                          (.setKeyEntry "server-cert" private-key
-                                                        (.toCharArray private-pwd) server-cert)
-                                          (.setCertificateEntry "root-ca" root-ca)
-                                          (.setCertificateEntry "amaris-ca" amaris-ca))
-                              :keystore-pass private-pwd}}))))
+              :else (let [client-ks (doto (KeyStore/getInstance "PKCS12")
+                                     (.load nil nil)
+                                     (.setKeyEntry "client-cert" private-key
+                                                   (.toCharArray private-pwd) client-cert)
+                                     (.setCertificateEntry "root-ca" root-ca)
+                                     (.setCertificateEntry "amaris-ca" amaris-ca))
+                         server-ks (doto (KeyStore/getInstance "PKCS12")
+                                     (.load nil nil)
+                                     (.setKeyEntry "server-cert" private-key
+                                                   (.toCharArray private-pwd) server-cert)
+                                     (.setCertificateEntry "root-ca" root-ca)
+                                     (.setCertificateEntry "amaris-ca" amaris-ca))]
+                     {:client {:keystore client-ks
+                               :keystore-pass private-pwd
+                               :trust-store client-ks}
+                      :server {:keystore server-ks
+                               :keystore-pass private-pwd}})))))
       (catch Exception error
         (println error)
         (throw-error (.getMessage error))))))

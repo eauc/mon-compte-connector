@@ -78,7 +78,7 @@
                 ;; :keystore "./connector.p12"
                 ;; :keystore-type "pkcs12"
                 :keystore-pass mon-compte-connector.certs/private-pwd
-                :trust-store (:trust-store (:client (:certs @mon-compte-connector.repl/system)))
+                :trust-store (:keystore (:client (:certs @mon-compte-connector.repl/system)))
                 })
 
 
