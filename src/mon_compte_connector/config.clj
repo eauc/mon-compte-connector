@@ -15,4 +15,5 @@
         (assoc :routes {:admin (ig/ref :admin)
                         :auth (ig/ref :auth)
                         :directories (ig/ref :directories)})
+        (assoc-in [:server :certs] (ig/ref :certs))
         (assoc-in [:server :routes] (ig/ref :routes)))))

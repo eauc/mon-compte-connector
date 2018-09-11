@@ -41,6 +41,7 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+        - containerPort: 3443
         env:
         - name: CODE_VERSION
           value: "${CI_COMMIT_SHA}"
@@ -71,6 +72,27 @@ metadata:
 spec:
   ports:
   - port: 8080
+    protocol: TCP
+  selector:
+    app: mon-compte
+    component: connector
+    branch: clj
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mon-compte-connector-clj-https
+  labels:
+    app: mon-compte
+    component: connector
+    branch: clj
+spec:
+  type: NodePort
+  ports:
+  - port: 3443
+    nodePort: 30446
     protocol: TCP
   selector:
     app: mon-compte

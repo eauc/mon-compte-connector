@@ -9,6 +9,7 @@
                  [cheshire "5.8.0"]
                  [compojure "1.6.1"]
                  [integrant "0.6.3"]
+                 [lock-key "1.5.0"]
                  [one-time "0.4.0"]
                  [ring/ring-core "1.6.3"]
                  [ring/ring-defaults "0.3.2"]

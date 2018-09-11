@@ -8,21 +8,21 @@
 
 
 (defn load
-  [{:keys [certs-file-path certs-file-pwd]} {:keys [on-error]}]
-  (let [print-error #(println (format "Invalid keystore file '%s': %s" certs-file-path %))]
+  [{:keys [certs-file-path certs-file-pwd] :as certs-options}]
+  (let [throw-error #(throw (ex-info (format "Invalid keystore file: %s" %) certs-options))]
     (try
       (let [keystore (KeyStore/getInstance "PKCS12")]
         (with-open [is (io/input-stream certs-file-path)]
           (.load keystore is (.toCharArray certs-file-pwd))
-          (let [client-cert (.getCertificateChain keystore "client-cert")
-                private-key (.getKey keystore "client-cert" (.toCharArray certs-file-pwd))
-                ;; server-cert (.getCertificate keystore "server-cert")
-                ;; server-key (.getKey keystore "server-cert" (.toCharArray certs-file-pwd))
+          (let [private-key (.getKey keystore "server-cert" (.toCharArray certs-file-pwd))
+                client-cert (.getCertificateChain keystore "client-cert")
+                server-cert (.getCertificateChain keystore "server-cert")
                 admin-cert (.getCertificate keystore "admin-cert")]
             (cond
-              (nil? client-cert) (print-error "client certificate not found")
-              (nil? private-key) (print-error "private key not found")
-              (nil? admin-cert) (print-error "admin certificate not found")
+              (nil? private-key) (throw-error "private key not found")
+              (nil? client-cert) (throw-error "client certificate not found")
+              (nil? server-cert) (throw-error "server certificate not found")
+              (nil? admin-cert) (throw-error "admin certificate not found")
               :else {:client {:keystore (doto (KeyStore/getInstance "PKCS12")
                                           (.load nil nil)
                                           (.setKeyEntry "client-cert" private-key
@@ -30,10 +30,15 @@
                               :keystore-pass private-pwd
                               :trust-store (doto (KeyStore/getInstance "PKCS12")
                                              (.load nil nil)
-                                             (.setCertificateEntry "admin-cert" admin-cert))}}))))
+                                             (.setCertificateEntry "admin-cert" admin-cert))}
+                     :server {:keystore (doto (KeyStore/getInstance "PKCS12")
+                                          (.load nil nil)
+                                          (.setKeyEntry "server-cert" private-key
+                                                        (.toCharArray private-pwd) server-cert))
+                              :keystore-pass private-pwd}}))))
       (catch Exception error
-        (print-error (.getMessage error))
-        (on-error error)))))
+        (println error)
+        (throw-error (.getMessage error))))))
 
 
 (def default-certs
@@ -42,5 +47,4 @@
 
 
 (defmethod ig/init-key :certs [_ config]
-  (load (merge default-certs config)
-        {:on-error #(throw "Error loading certificates")}))
+  (load (merge default-certs config)))

@@ -1,9 +1,11 @@
-:base_url = http://localhost:8080
+:base_url = https://k8s.amaris.ovh:30446
+# :base_url = http://k8s.amaris.ovh:30080/mon-compte-connector/clj
+# :base_url = http://localhost:8080:
 :user_mail = user11@domain1.com
 :user_pass = Password11
 :user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
 :device-uid = yrn8932n7m0rx49t048x80t35300
-:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjQ1ODUwNH0.ewfY-ct9sCj6XkJih2x9YuUr5oFmfjum6PJFV1W-C14
+:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjY3MDA5MX0.kakLqiSPa7x48krZrqfI2upTvxwIsdKXqVdxcH1ndL0
 
 # Create auth token
 

@@ -1,6 +1,10 @@
 {
   "server": {
-    "port": 8080
+    "port": 8080,
+    "http?": true,
+    "ssl?": true,
+    "ssl-port": 3443,
+    "client-auth": "none"
   },
   "admin": {
     "base-url": "https://k8s.amaris.ovh:30444"
