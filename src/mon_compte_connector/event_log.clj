@@ -6,8 +6,8 @@
   [result {:keys [type domain device-uid]}]
   (cond-> {:status (if (result/ok? result) "OK" "Error")
            :messages (or (result/errors result) [])
-           :domain domain
-           :deviceUid device-uid}
+           :domain (or domain "N/A")
+           :deviceUid (or device-uid "N/A")}
     (not (nil? type)) (assoc :type type)))
 
 

@@ -21,7 +21,7 @@
 (defn start
   []
   (reset! system (app/start {:config-file-path "config.dev.json"
-                             :certs-file-path "connector.p12"
+                             :certs-file-path "./certs/connector.p12"
                              :certs-file-pwd "123456"})))
 
 

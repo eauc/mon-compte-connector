@@ -2,3 +2,5 @@ openssl pkcs12 -in ../../mon-compte-root/connector/data/acme.server.pem -inkey .
 openssl pkcs12 -in ../../mon-compte-root/connector/data/acme.client.pem -inkey ../../mon-compte-root/connector/data/acme.key -name client-cert -export -out connector.client.p12
 keytool -importkeystore -srckeystore connector.client.p12 -destkeystore connector.p12
 keytool -importcert -alias admin-cert -keystore connector.p12 -file ../../mon-compte-root/admin-proxy/certs/admin/admin.server.pem
+keytool -importcert -alias root-ca -keystore connector.p12 -file root-ca.pem
+keytool -importcert -alias amaris-ca -keystore connector.p12 -file amaris-ca.pem

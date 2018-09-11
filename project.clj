@@ -4,6 +4,7 @@
                  [org.clojure/tools.cli "0.3.7"]
                  [clj-http "3.9.1"]
                  [clj-time "0.14.4"]
+                 [bananaoomarang/ring-debug-logging "1.1.0"]
                  [buddy/buddy-auth "2.1.0"]
                  [buddy/buddy-sign "2.2.0"]
                  [cheshire "5.8.0"]

@@ -14,6 +14,12 @@
         (.load keystore is (.toCharArray "123456"))
         keystore)))
 
+  (def ks
+    (let [keystore (KeyStore/getInstance "PKCS12")]
+      (with-open [is (io/input-stream "../../mon-compte-root/connector/data/acme.combined.p12")]
+        (.load keystore is (.toCharArray "MT9zoRrKZ2ZfMzUb29f2nVpz"))
+        keystore)))
+
   (Collections/list (.aliases ks))
   ;; => ["client-cert" "root-ca" "amaris-ca" "server-cert"]
 
@@ -21,7 +27,10 @@
 
   (.getCertificate ks "server-cert")
 
+  (.getCertificate ks "ca-chain")
+
   (.getCertificate ks "root-ca")
+  
   (.getCertificate ks "amaris-ca")
 
   (.getCertificateChain ks "client-cert")
