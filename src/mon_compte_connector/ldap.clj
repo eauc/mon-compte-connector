@@ -8,11 +8,9 @@
 
 (defn error-message
   [error]
-  (let [raw-message (.getMessage error)]
-    (if-not (re-find #"ConnectException" raw-message)
-      raw-message
-      (let [[message] (str/split raw-message #":\s")]
-        (or message raw-message)))))
+  (let [raw-message (.getMessage error)
+        [message] (str/split raw-message #":\s")]
+    (or message raw-message)))
 
 
 (defn catch-error
