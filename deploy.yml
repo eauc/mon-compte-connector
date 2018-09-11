@@ -43,11 +43,11 @@ spec:
         - containerPort: 8080
         env:
         - name: CODE_VERSION
-          value: ${CI_COMMIT_SHA}
+          value: "${CI_COMMIT_SHA}"
         - name: CONFIG_FILE
           value: "/config/config.edn"
         - name: CERTS_FILE_PASSWORD
-          value: ${CERTS_FILE_PASSWORD}
+          value: "${CERTS_FILE_PASSWORD}"
         - name: CERTS_FILE
           value: "/config/connector.p12"
         volumeMounts:
