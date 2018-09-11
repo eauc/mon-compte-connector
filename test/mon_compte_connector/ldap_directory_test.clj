@@ -39,7 +39,7 @@
                    :pwd-changed-time "2018-08-21T10:55:06Z",
                    :pwd-max-age 7200,
                    :pwd-expiration-date "2018-08-21T12:55:06Z"}
-                  nil]
+                  []]
                  (user directory "test-filter")))
 
           (is (= [[{:base-dn "user-base-dn",
@@ -76,7 +76,7 @@
                    :pwd-changed-time "2018-08-21T10:55:06Z",
                    :pwd-max-age 45800,
                    :pwd-expiration-date "2018-08-21T23:38:26Z"}
-                  nil]
+                  []]
                  (user directory "test-filter")))
 
           (is (= [[{:base-dn "user-base-dn",
@@ -185,7 +185,7 @@
                    :pwd-changed-time "2018-08-21T10:55:06Z",
                    :pwd-max-age 7200,
                    :pwd-expiration-date "2018-08-21T12:55:06Z"}
-                  nil]
+                  []]
                  (authenticated-user directory "user1@myDomain.com" "userPass")))
 
           (is (= [[directory "user1@myDomain.com"]]
@@ -246,7 +246,7 @@
                    :pwd-changed-time "2018-09-21T12:55:06Z",
                    :pwd-max-age 7200,
                    :pwd-expiration-date "2018-09-21T14:55:06Z"}
-                  nil]
+                  []]
                  (user-pwd-reset directory "user1@myDomain.com" "newPass")))
 
           (is (= [[directory "user1@myDomain.com"]]
@@ -313,7 +313,7 @@
                    :pwd-changed-time "2018-09-21T12:55:06Z",
                    :pwd-max-age 7200,
                    :pwd-expiration-date "2018-09-21T14:55:06Z"}
-                  nil]
+                  []]
                  (user-pwd-update directory "user1@myDomain.com" "oldPass" "newPass")))
 
           (is (= [[directory "user1@myDomain.com"]]

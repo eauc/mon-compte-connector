@@ -27,7 +27,7 @@
         pwd-policy? (err-> (pp/query user config pwd-policy-schema)
                            (lget (conn directory)))]
     (if (and (not (result/ok? pwd-policy?))
-             (nil? (result/errors pwd-policy?)))
+             (empty? (result/errors pwd-policy?)))
       (->errors ["password policy not found"])
       (err-> pwd-policy?
              (pp/map-attributes pwd-policy-schema)
