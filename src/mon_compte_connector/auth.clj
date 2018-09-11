@@ -3,6 +3,7 @@
            java.util.Date)
   (:require [buddy.auth.backends :as backends]
             [buddy.sign.jwt :as jwt]
+            [clojure.pprint :refer [pprint]]
             [clj-time.core :as time]
             [integrant.core :as ig]
             [one-time.core :as ot]
@@ -21,7 +22,8 @@
 (defn user-token
   [{:keys [mail uid] :as user} {:keys [now exp-delay secret] :as options}]
   (let [exp (time/plus now exp-delay)
-        token (jwt/sign {:mail mail :uid uid :exp exp} secret (dissoc options :secret :now :exp-delay))]
+        sign-options (dissoc options :secret :now :exp-delay :store)
+        token (jwt/sign {:mail mail :uid uid :exp exp} secret sign-options)]
     (->result
       {:user user
        :token token})))
@@ -104,8 +106,9 @@
 
 (defmethod ig/init-key :auth [_ {:keys [code token] :as config}]
   (let [base-code (assoc code :store users-keys-store)
-        base-token (assoc token
-                          :store ott-store
-                          :exp-delay (time/seconds (:exp-delay token)))]
+        base-token (-> token
+                       (update :alg keyword)
+                       (assoc :store ott-store
+                              :exp-delay (time/seconds (:exp-delay token))))]
     {:code #(assoc base-code :date (Date.))
      :token #(assoc base-token :now (time/now))}))

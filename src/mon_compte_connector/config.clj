@@ -11,7 +11,7 @@
     (-> raw-config
         (assoc :certs {:certs-file-path certs-file-path
                        :certs-file-pwd certs-file-pwd})
-        (assoc :admin {:certs (ig/ref :certs)})
+        (assoc-in [:admin :certs] (ig/ref :certs))
         (assoc :routes {:admin (ig/ref :admin)
                         :auth (ig/ref :auth)
                         :directories (ig/ref :directories)})

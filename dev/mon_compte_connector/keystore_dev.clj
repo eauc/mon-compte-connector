@@ -1,7 +1,8 @@
 (ns mon-compte-connector.keystore-dev
   (:import java.util.Collections
            java.security.KeyStore)
-  (:require [clojure.java.io :as io]
+  (:require [mon-compte-connector.certs]
+            [clojure.java.io :as io]
             [clj-http.client :as client]))
 
 
@@ -59,6 +60,16 @@
                 ;; :keystore-type "pkcs12"
                 :keystore-pass "789456"
                 :trust-store trust-ks
+                })
+
+  (client/post "https://k8s.amaris.ovh:30444/v1/connectors/register"
+               {:content-type :json
+                :as :json
+                :keystore (:keystore (:client (:certs @mon-compte-connector.repl/system)))
+                ;; :keystore "./connector.p12"
+                ;; :keystore-type "pkcs12"
+                :keystore-pass mon-compte-connector.certs/private-pwd
+                :trust-store (:trust-store (:client (:certs @mon-compte-connector.repl/system)))
                 })
 
 

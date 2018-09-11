@@ -27,6 +27,7 @@
                                           (.load nil nil)
                                           (.setKeyEntry "client-cert" private-key
                                                         (.toCharArray private-pwd) client-cert))
+                              :keystore-pass private-pwd
                               :trust-store (doto (KeyStore/getInstance "PKCS12")
                                              (.load nil nil)
                                              (.setCertificateEntry "admin-cert" admin-cert))}}))))

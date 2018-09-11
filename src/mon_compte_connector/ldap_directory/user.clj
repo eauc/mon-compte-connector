@@ -20,7 +20,9 @@
 
 (defn map-attributes
   [user user-schema]
-  (->result (rename-keys user (map-invert (attributes user-schema)))))
+  (->result (-> user
+                (rename-keys (map-invert (attributes user-schema)))
+                (dissoc :password))))
 
 
 (defn read-attributes

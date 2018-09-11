@@ -1,4 +1,5 @@
-(ns mon-compte-connector.result)
+(ns mon-compte-connector.result
+  (:require [clojure.pprint :refer [pprint]]))
 
 
 (def make-result vector)
@@ -36,10 +37,12 @@
 
 
 (defn apply-or-error
-  [x fn & args]
-  (if (ok? x)
-    (apply fn (value x) args)
-    x))
+  [prev? fn & args]
+  (if-not (ok? prev?)
+    prev?
+    (let [result? (apply fn (value prev?) args)]
+      (make-result (value result?)
+                   (concat (or (errors prev?) []) (errors result?))))))
 
 
 (defmacro err->
