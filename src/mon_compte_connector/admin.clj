@@ -4,6 +4,7 @@
             [clj-http.client :as client]
             [clojure.tools.logging :as log]
             [integrant.core :as ig]
+            [mon-compte-connector.debug :as dbg]
             [mon-compte-connector.result :as r]))
 
 
@@ -17,23 +18,19 @@
                  :keystore keystore
                  :keystore-pass keystore-pass
                  :trust-store keystore}]
-    (log/info {:url url :request request} "Sending request to admin")
-    (pprint {:url url :request request})
+    (dbg/pprint {:url url :request request})
     (try
       (-> (client/post url request)
           :body
           ((fn [result]
-             (log/info {:path path
-                        :params params
-                        :result result} (str "Send " path " success"))
-             (pprint {:notification params
-                      :result result})
+             (dbg/pprint {:notification params
+                          :result result})
              result))
           r/just)
-      (catch Exception e
-        (log/error e (str "Send " path " error"))
-        (pprint e)
-        (r/create nil [(.getMessage e)])))))
+      (catch Exception error
+        (log/warn (str "Send " path " error") {:message (.getMessage error)})
+        (dbg/pprint error)
+        (r/create nil [(.getMessage error)])))))
 
 
 (defprotocol AdminAPI
@@ -53,6 +50,5 @@
 
 (defmethod ig/init-key :admin [_ {:keys [base-url certs] :as config}]
   (when (nil? base-url)
-    (println "No AdminAPI URL defined in config")
-    (throw (ex-info {:admin-config config} "No AdminAPI URL defined in config")))
+    (throw (ex-info "No AdminAPI URL defined in config" {:admin-config config})))
   (Admin. base-url (:client certs) "mySecret"))

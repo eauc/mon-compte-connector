@@ -13,15 +13,22 @@
 
 (defn load-ks
   []
-  (-> (keystore/load)
-      (keystore/get-data-entry "config" (:pwd keystore/default-ks))))
+  (try
+    (-> (keystore/load)
+        (keystore/get-data-entry "config" (:pwd keystore/default-ks)))
+    (catch Exception error
+      (throw (ex-info "Error loading config from defaut keystore" {:message (.getMessage error)})))))
 
 
 (defn load
   [{:keys [config-file-path]}]
   (if config-file-path
-    (-> (io/reader config-file-path)
-        (cs/parse-stream true))
+    (try
+      (-> (io/reader config-file-path)
+          (cs/parse-stream true))
+      (catch Exception error
+        (throw (ex-info (format "Error reading config file '%s'" config-file-path)
+                        {:message (.getMessage error)}))))
     (load-ks)))
 
 

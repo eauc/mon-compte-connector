@@ -47,6 +47,6 @@
                      :pwd-max-age pwd-max-age
                      :pwd-expiration-date (format-date-time pwd-expiration-date)
                      :pwd-changed-time (format-date-time pwd-changed-time))))
-    (catch Exception e
-      (log/error e "Error calculating pwd expiration date")
+    (catch Exception error
+      (log/warn "Error calculating pwd expiration date" {:message (.getMessage error)})
       (r/create nil ["invalid pwd expiration date"]))))

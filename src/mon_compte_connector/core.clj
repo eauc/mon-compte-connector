@@ -1,7 +1,7 @@
 (ns mon-compte-connector.core
-  (:require [clojure.pprint :refer [pprint]]
-            [clojure.tools.cli :refer [parse-opts]]
+  (:require [clojure.tools.cli :refer [parse-opts]]
             [clojure.string :as s]
+            [clojure.tools.logging :as log]
             [mon-compte-connector.app :as app])
   (:gen-class))
 
@@ -43,6 +43,9 @@
                                           (print-usage opts)
                                           1)
       ;; ok, start
-      :else (app/start {:config-file-path config
-                        :certs-file-path certs-file-path
-                        :certs-file-pwd password}))))
+      :else (try
+              (app/start {:config-file-path config
+                          :certs-file-path certs-file-path
+                          :certs-file-pwd password})
+              (catch Exception error
+                (log/error error (.getMessage error) (ex-data error)))))))

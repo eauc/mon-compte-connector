@@ -1,7 +1,6 @@
 (ns mon-compte-connector.ldap-directory
   (:import com.unboundid.ldap.sdk.Filter)
-  (:require [clojure.pprint :refer [pprint]]
-            [clojure.tools.logging :as log]
+  (:require [clojure.tools.logging :as log]
             [integrant.core :as ig]
             [lock-key.core :as lk]
             [mon-compte-connector.cipher :as cipher]
@@ -195,10 +194,7 @@
                        [name {:config (dissoc config :schema)
                               :schema (get schemas (keyword schema) (get schema :default))}]) servers)
         pool? (make-directory-pool configs)]
-    (println "Directories configs...")
-    (pprint configs)
-    (println "Directories init logs...")
-    (pprint (r/logs pool?))
+    (log/info "Directories init logs..." {:logs (r/logs pool?)})
     (r/value pool?)))
 
 

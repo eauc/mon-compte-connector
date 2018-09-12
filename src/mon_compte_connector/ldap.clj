@@ -20,7 +20,7 @@
   (try
     [(apply fn args) nil]
     (catch Exception error
-      (log/error error "LDAP request error")
+      (log/warn "LDAP request error" {:message (.getMessage error)})
       (r/create nil [(error-message error)]))))
 
 

@@ -1,4 +1,4 @@
 ** TODO
 
-- cleanup exception & error logs on startup
+- validate config
 - cleanup exception handling in routes

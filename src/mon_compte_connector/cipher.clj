@@ -4,7 +4,8 @@
             [integrant.core :as ig]
             [lock-key.core :as lk]
             [mon-compte-connector.admin :as adm]
-            [mon-compte-connector.result :as r :refer [err->]]))
+            [mon-compte-connector.result :as r :refer [err->]]
+            [mon-compte-connector.debug :as dbg]))
 
 
 
@@ -19,7 +20,7 @@
   [encrypted secret]
   (-> encrypted
       (lk/decrypt-from-base64 secret)
-      cs/parse-string true))
+      (cs/parse-string true)))
 
 
 (defmethod ig/init-key :cipher [_ {:keys [admin] :as config}]
