@@ -1,0 +1,5 @@
+** TODO
+
+- cleanup exception & error logs on startup
+- cleanup exception handling in routes
+

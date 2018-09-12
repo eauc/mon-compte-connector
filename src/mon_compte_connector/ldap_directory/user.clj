@@ -2,7 +2,7 @@
   (:import com.unboundid.ldap.sdk.Filter)
   (:require [clojure.set :refer [map-invert rename-keys]]
             [clojure.tools.logging :as log]
-            [mon-compte-connector.result :refer [->result]]))
+            [mon-compte-connector.result :as r]))
 
 
 (defn attributes
@@ -20,14 +20,15 @@
 
 (defn map-attributes
   [user user-schema]
-  (->result (-> user
-                (rename-keys (map-invert (attributes user-schema)))
-                (dissoc :password))))
+  (r/just (-> user
+              (rename-keys (map-invert (attributes user-schema)))
+              (dissoc :password))))
 
 
 (defn read-attributes
   [user-schema]
   (vals (attributes user-schema)))
+
 
 (defn query
   [{:keys [config schema]} filter]

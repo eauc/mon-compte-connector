@@ -2,7 +2,7 @@
   (:require [mon-compte-connector.ldap-directory.pwd :refer :all]
             [clojure.test :refer [deftest testing is are]]
             [mon-compte-connector.example :refer [example]]
-            [mon-compte-connector.result :as result]))
+            [mon-compte-connector.result :as r]))
 
 (deftest ldap-directory.pwd-test
   (testing "reset-query"
@@ -11,7 +11,7 @@
       [user user-schema new-pwd query]
 
       (= query (-> (reset-query user user-schema new-pwd)
-                   result/value))
+                   r/value))
 
       {:describe "default user schema"
        :user {:dn "cn=Toto,dc=amaris,dc=ovh"}

@@ -1,5 +1,5 @@
 (ns mon-compte-connector.util
-  (:require [mon-compte-connector.result :refer [->errors ->result]]))
+  (:require [mon-compte-connector.result :as r]))
 
 
 (def domain-pattern
@@ -10,5 +10,5 @@
   [mail]
   (let [[_ domain] (re-matches domain-pattern mail)]
     (if (nil? domain)
-      (->errors ["mail format is invalid"])
-      (->result domain))))
+      (r/create nil ["mail format is invalid"])
+      (r/just domain))))

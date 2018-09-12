@@ -2,15 +2,15 @@
   (:require [mon-compte-connector.directory-pool :refer :all]
             [clojure.test :refer [deftest testing is are]]
             [mon-compte-connector.example :refer [example]]
-            [mon-compte-connector.result :refer [->result ->errors]]))
+            [mon-compte-connector.result :as r]))
 
 (deftest directory-pool-test
   (testing "on-pool"
     (let [test-fn (fn [dir & xs]
                     (case dir
-                      "ok" (->result {:args xs})
-                      "ko" (->errors xs)
-                      (->errors ["not found"])))]
+                      "ok" (r/just {:args xs})
+                      "ko" (r/create nil xs)
+                      (r/create nil ["not found"])))]
 
       (example
 

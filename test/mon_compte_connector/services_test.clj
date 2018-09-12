@@ -4,7 +4,7 @@
             [clojure.test :refer [deftest testing is are]]
             [mon-compte-connector.admin :refer [AdminAPI]]
             [mon-compte-connector.directory :refer [Directory]]
-            [mon-compte-connector.result :refer [->errors ->result]]
+            [mon-compte-connector.result :as r]
             [mon-compte-connector.example :refer [example]]
             [clj-time.core :as time]
             [mon-compte-connector.auth :as auth]))
@@ -61,7 +61,7 @@
     (testing "success"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:authenticated-user (->result test-user)})
+            pool (MockPool. calls {:authenticated-user (r/just test-user)})
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
                                     :alg :hs256
@@ -117,7 +117,7 @@
       (let [calls (atom {})
             admin (MockAdmin. calls {})
             pool (MockPool. calls {:authenticated-user
-                                   (->errors ["User not found"
+                                   (r/create nil ["User not found"
                                               "connection error"
                                               "User not found"])})
             options {:auth-options {} :admin admin :pool pool}]
@@ -143,7 +143,7 @@
     (testing "success"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->result test-user)})
+            pool (MockPool. calls {:user (r/just test-user)})
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
                                     :alg :hs256
@@ -170,7 +170,7 @@
     (testing "invalid token"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->result {})})
+            pool (MockPool. calls {:user (r/just {})})
             options {:auth-options {}
                      :admin admin :pool pool}]
 
@@ -191,7 +191,7 @@
     (testing "user not found"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->errors ["User not found"])})
+            pool (MockPool. calls {:user (r/create nil ["User not found"])})
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
                                     :alg :hs256
@@ -218,7 +218,7 @@
     (testing "success"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->result test-user)})
+            pool (MockPool. calls {:user (r/just test-user)})
             options {:auth-options {:time-step 300
                                     :date (Date. 0)
                                     :store (atom {})
@@ -244,7 +244,7 @@
     (testing "invalid mail"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->errors ["User not found"
+            pool (MockPool. calls {:user (r/create nil ["User not found"
                                                     "connection error"])})
             options {:auth-options {:time-step 300
                                     :date (Date. 0)
@@ -268,7 +268,7 @@
     (testing "user not found"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->errors ["User not found"
+            pool (MockPool. calls {:user (r/create nil ["User not found"
                                                     "connection error"])})
             options {:auth-options {:time-step 300
                                     :date (Date. 0)
@@ -295,7 +295,7 @@
     (testing "success"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->result test-user)})
+            pool (MockPool. calls {:user (r/just test-user)})
             options {:auth-options {:code {:time-step 300
                                            :date (Date. 0)
                                            :store (atom {})
@@ -326,7 +326,7 @@
     (testing "invalid code"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user (->result test-user)})
+            pool (MockPool. calls {:user (r/just test-user)})
             options {:auth-options {:code {:time-step 300
                                            :date (Date. 0)
                                            :store (atom {})
@@ -357,7 +357,7 @@
     (testing "success"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user-pwd-reset (->result test-user)})
+            pool (MockPool. calls {:user-pwd-reset (r/just test-user)})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
@@ -404,7 +404,7 @@
     (testing "invalid token"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user-pwd-reset (->result test-user)})
+            pool (MockPool. calls {:user-pwd-reset (r/just test-user)})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
@@ -432,7 +432,7 @@
     (testing "update failure"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user-pwd-reset (->errors ["connection error"])})
+            pool (MockPool. calls {:user-pwd-reset (r/create nil ["connection error"])})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
@@ -462,7 +462,7 @@
     (testing "success"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user-pwd-update (->result test-user)})
+            pool (MockPool. calls {:user-pwd-update (r/just test-user)})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
@@ -496,7 +496,7 @@
     (testing "invalid token"
       (let [calls (atom {})
             admin (MockAdmin. calls {})
-            pool (MockPool. calls {:user-pwd-update (->result test-user)})
+            pool (MockPool. calls {:user-pwd-update (r/just test-user)})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
@@ -524,7 +524,7 @@
       (let [calls (atom {})
             admin (MockAdmin. calls {})
             pool (MockPool. calls {:user-pwd-update
-                                   (->errors
+                                   (r/create nil
                                      ["Password does not pass the quality checks"])})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)

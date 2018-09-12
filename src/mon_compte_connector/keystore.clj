@@ -2,6 +2,7 @@
   (:import java.security.KeyStore
            javax.crypto.SecretKeyFactory
            javax.crypto.spec.PBEKeySpec)
+  (:refer-clojure :exclude [load])
   (:require [cheshire.core :as cs]
             [clojure.java.io :as io]))
 

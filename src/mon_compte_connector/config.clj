@@ -2,6 +2,7 @@
   (:import java.security.KeyStore
            javax.crypto.SecretKeyFactory
            javax.crypto.spec.PBEKeySpec)
+  (:refer-clojure :exclude [load])
   (:require [cheshire.core :as cs]
             [clojure.java.io :as io]
             [integrant.core :as ig]
@@ -24,9 +25,18 @@
     (load-ks)))
 
 
+(def default-config
+  {:auth {}
+   :certs {}
+   :admin {}
+   :directories {}
+   :routes {}
+   :server {}})
+
+
 (defn init
   [raw-config {:keys [certs-file-path certs-file-pwd]}]
-  (-> raw-config
+  (-> (merge default-config raw-config)
       (assoc :certs {:certs-file-path certs-file-path
                      :certs-file-pwd certs-file-pwd})
       (assoc-in [:admin :certs] (ig/ref :certs))

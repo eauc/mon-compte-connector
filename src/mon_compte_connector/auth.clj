@@ -7,7 +7,7 @@
             [clj-time.core :as time]
             [integrant.core :as ig]
             [one-time.core :as ot]
-            [mon-compte-connector.result :as result :refer [->result ->errors]]))
+            [mon-compte-connector.result :as r]))
 
 
 (defn basic-auth
@@ -24,20 +24,18 @@
   (let [exp (time/plus now exp-delay)
         sign-options (dissoc options :secret :now :exp-delay :store)
         token (jwt/sign {:mail mail :uid uid :exp exp} secret sign-options)]
-    (->result
-      {:user user
-       :token token})))
+    (r/just {:user user
+             :token token})))
 
 
 (defn user-claim
   [token {:keys [secret] :as options}]
   (if (empty? token)
-    (->errors ["token is invalid"])
+    (r/create nil ["token is invalid"])
     (try
-      (->result
-        (jwt/unsign token secret (dissoc options :secret)))
+      (r/just (jwt/unsign token secret (dissoc options :secret)))
       (catch ExceptionInfo e
-        (->errors [(.getMessage e)])))))
+        (r/create nil [(.getMessage e)])))))
 
 
 (defn user-key
@@ -54,9 +52,8 @@
   (let [code (-> user
                  (user-key options)
                  (ot/get-totp-token (dissoc options :store :gen-key)))]
-    (->result
-      {:user user
-       :code code})))
+    (r/just {:user user
+             :code code})))
 
 
 (def code-invalid "Code is invalid")
@@ -67,8 +64,8 @@
   (let [valid? (ot/is-valid-totp-token? code (user-key {:mail mail} options)
                                         (dissoc options :store :gen-keys))]
     (if valid?
-      (->result mail)
-      (->errors [code-invalid]))))
+      (r/just mail)
+      (r/create nil [code-invalid]))))
 
 
 (defn one-time-token
@@ -76,8 +73,7 @@
   (let [exp (time/plus now exp-delay)
         token (jwt/sign {:mail mail :exp exp} secret (dissoc options :store :secret :now :exp-delay))]
     (swap! store assoc mail token)
-    (->result
-      {:token token})))
+    (r/just {:token token})))
 
 
 (def ott-invalid "One-time token is invalid")
@@ -86,15 +82,14 @@
 (defn one-time-claim
   [mail token {:keys [secret store] :as options}]
   (let [claim? (try
-                 (->result
-                   (jwt/unsign token secret (dissoc options :secret :store)))
+                 (r/just (jwt/unsign token secret (dissoc options :secret :store)))
                  (catch ExceptionInfo e
-                   (->errors [(.getMessage e)])))]
-    (if-not (result/ok? claim?)
+                   (r/create nil [(.getMessage e)])))]
+    (if-not (r/ok? claim?)
       claim?
       (let [valid? (= token (get @store mail))]
         (if-not valid?
-          (->errors [ott-invalid])
+          (r/create nil [ott-invalid])
           (do
             (swap! store dissoc mail)
             claim?))))))

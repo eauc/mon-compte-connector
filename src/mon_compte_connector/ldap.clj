@@ -1,8 +1,10 @@
 (ns mon-compte-connector.ldap
   (:import com.unboundid.ldap.sdk.Filter)
-  (:require [clojure.tools.logging :as log]
+  (:refer-clojure :exclude [get])
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.tools.logging :as log]
             [clj-ldap.client :as ldap]
-            [mon-compte-connector.result :refer [->errors]]
+            [mon-compte-connector.result :as r]
             [clojure.string :as str]))
 
 
@@ -19,7 +21,7 @@
     [(apply fn args) nil]
     (catch Exception error
       (log/error error "LDAP request error")
-      (->errors [(error-message error)]))))
+      (r/create nil [(error-message error)]))))
 
 
 

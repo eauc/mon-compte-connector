@@ -4,7 +4,7 @@
             [clj-http.client :as client]
             [clojure.tools.logging :as log]
             [integrant.core :as ig]
-            [mon-compte-connector.result :refer [->errors ->result]]))
+            [mon-compte-connector.result :as r]))
 
 
 (defn -send
@@ -28,11 +28,11 @@
              (pprint {:notification params
                       :result result})
              result))
-          ->result)
+          r/just)
       (catch Exception e
         (log/error e (str "Send " path " error"))
         (pprint e)
-        (->errors [(.getMessage e)])))))
+        (r/create nil [(.getMessage e)])))))
 
 
 (defprotocol AdminAPI

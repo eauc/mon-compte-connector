@@ -1,5 +1,6 @@
 (ns mon-compte-connector.certs
   (:import java.security.KeyStore)
+  (:refer-clojure :exclude [load])
   (:require [clojure.java.io :as io]
             [integrant.core :as ig]
             [mon-compte-connector.keystore :as keystore]))

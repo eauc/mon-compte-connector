@@ -2,7 +2,7 @@
   (:require [mon-compte-connector.ldap-directory :refer :all]
             [mon-compte-connector.directory :as dir :refer [Directory DirectoryFilters]]
             [mon-compte-connector.directory-pool :as dir-pool]
-            [mon-compte-connector.result :as result :refer [->result ->errors err->]]))
+            [mon-compte-connector.result :as r]))
 
 
 (comment
@@ -35,7 +35,7 @@
                   :users-base-dn (str "ou=Users," domain1dc)
                   :default-pwd-policy (str "cn=passwordDefault,ou=pwpolicies," domain1dc)})
 
-    (def directory (result/value
+    (def directory (r/value
                      (make-directory
                        {:config config1
                         :schema {:user user-schema
@@ -213,16 +213,16 @@
        :users-base-dn "dc=amaris,dc=ovh"
        :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
 
-    (def pool (result/value (make-directory-pool
-                              {:server1 {:config config1
-                                         :schema {:user user-schema
-                                                  :pwd-policy {}}}
-                               :bad-server {:config bad-config
-                                            :schema {:user user-schema
-                                                     :pwd-policy {}}}
-                               :server2 {:config config2
-                                         :schema {:user user-schema
-                                                  :pwd-policy {}}}}))))
+    (def pool (r/value (make-directory-pool
+                         {:server1 {:config config1
+                                    :schema {:user user-schema
+                                             :pwd-policy {}}}
+                          :bad-server {:config bad-config
+                                       :schema {:user user-schema
+                                                :pwd-policy {}}}
+                          :server2 {:config config2
+                                    :schema {:user user-schema
+                                             :pwd-policy {}}}}))))
 
   (dir/user pool #(dir/user-uid-filter % "toto"))
   ;; => [nil

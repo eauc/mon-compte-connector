@@ -1,9 +1,9 @@
 (ns mon-compte-connector.ldap-directory-test
   (:require [mon-compte-connector.ldap-directory :refer :all]
             [mon-compte-connector.directory :as dir]
-            [mon-compte-connector.result :refer [->errors ->result]]
-            [clojure.test :refer [deftest testing is are]]
-            [mon-compte-connector.example :refer [example]]))
+            [mon-compte-connector.result :as r]
+            [mon-compte-connector.example :refer [example]]
+            [clojure.test :refer [deftest testing is are]]))
 
 (deftest ldap-directory-test
 
@@ -11,7 +11,7 @@
                #(do
                   (swap! calls update fn-name (fnil conj []) [%1 %2])
                   result))
-        directory-base {:conn (atom (->result "conn"))
+        directory-base {:conn (atom (r/just "conn"))
                         :config {:users-base-dn "user-base-dn"
                                  :default-pwd-policy "default-pwd-policy"}
                         :schema {:user {:attributes {}}
@@ -23,14 +23,14 @@
               directory (merge
                           directory-base
                           {:search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
                                              :pwdChangedTime "20180821105506Z",
                                              :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                                              :phone "+3312345678"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))})]
+                                       (r/just {:pwdMaxAge "7200"}))})]
 
           (is (= [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                    :description "This is John Doe's description",
@@ -59,7 +59,7 @@
                           {:schema {:user {:attributes {:phone "mobile"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
                                              :pwdPolicySubentry "pwd-policy-user"
@@ -67,7 +67,7 @@
                                              :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                                              :mobile "+3312345678"}]))
                            :lget (mock calls :lget
-                                       (->result {:passwordMaxAge "45800"}))})]
+                                       (r/just {:passwordMaxAge "45800"}))})]
 
           (is (= [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                    :description "This is John Doe's description",
@@ -96,9 +96,9 @@
                           {:schema {:user {:attributes {:phone "mobile"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
-                                         (->result []))
+                                         (r/just []))
                            :lget (mock calls :lget
-                                       (->errors ["object not found"]))})]
+                                       (r/create nil ["object not found"]))})]
 
           (is (= [nil ["User not found"]]
                  (user directory "test-filter")))))
@@ -110,9 +110,9 @@
                           {:schema {:user {:attributes {:phone "mobile"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
-                                         (->errors ["connection error"]))
+                                         (r/create nil ["connection error"]))
                            :lget (mock calls :lget
-                                       (->result {:passwordMaxAge "45800"}))})]
+                                       (r/just {:passwordMaxAge "45800"}))})]
 
           (is (= [nil ["connection error"]]
                  (user directory "test-filter")))
@@ -127,14 +127,14 @@
                           {:schema {:user {:attributes {:phone "mobile"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
                                              :pwdPolicySubentry "pwd-policy-user"
                                              :pwdChangedTime "20180821105506Z",
                                              :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                                              :mobile "+3312345678"}]))
-                           :lget (mock calls :lget (->result nil))})]
+                           :lget (mock calls :lget (r/just nil))})]
 
           (is (= [nil ["password policy not found"]]
                  (user directory "test-filter")))))
@@ -146,7 +146,7 @@
                           {:schema {:user {:attributes {:phone "mobile"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
                                              :pwdPolicySubentry "pwd-policy-user"
@@ -154,7 +154,7 @@
                                              :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                                              :mobile "+3312345678"}]))
                            :lget (mock calls :lget
-                                       (->errors ["object not found"]))})]
+                                       (r/create nil ["object not found"]))})]
 
           (is (= [nil ["object not found"]]
                  (user directory "test-filter"))))))
@@ -167,16 +167,16 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
                                              :pwdChangedTime "20180821105506Z",
                                              :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                                              :phone "+3312345678"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :bind? (mock calls :bind?
-                                        (->result true))})]
+                                        (r/just true))})]
 
           (is (= [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                    :description "This is John Doe's description",
@@ -203,16 +203,16 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
                                              :pwdChangedTime "20180821105506Z",
                                              :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
                                              :phone "+3312345678"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :bind? (mock calls :bind?
-                                        (->errors ["invalid credentials"]))})]
+                                        (r/create nil ["invalid credentials"]))})]
 
           (is (= [nil [ "invalid credentials"]]
                  (authenticated-user directory "user1@myDomain.com" "userPass"))))))
@@ -225,13 +225,13 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :modify (mock calls :modify
-                                         (->result
+                                         (r/just
                                            { :post-read
                                             {:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
@@ -267,13 +267,13 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :modify (mock calls :modify
-                                         (->errors ["invalid update"]))})]
+                                         (r/create nil ["invalid update"]))})]
 
           (is (= [nil ["invalid update"]]
                  (user-pwd-reset directory "user1@myDomain.com" "newPass"))))))
@@ -286,18 +286,18 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
                                               (swap! calls update :get-connection (fnil conj []) [%1])
-                                              (->result "user-conn"))
+                                              (r/just "user-conn"))
                            :bind? (mock calls :bind?
-                                        (->result true))
+                                        (r/just true))
                            :modify (mock calls :modify
-                                         (->result
+                                         (r/just
                                            { :post-read
                                             {:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
@@ -347,16 +347,16 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
-                           :get-connection (fn [_] (->errors ["connection error"]))
+                                       (r/just {:pwdMaxAge "7200"}))
+                           :get-connection (fn [_] (r/create nil ["connection error"]))
                            :bind? (mock calls :bind?
-                                        (->result true))
+                                        (r/just true))
                            :modify (mock calls :modify
-                                         (->result
+                                         (r/just
                                            { :post-read
                                             {:description "This is John Doe's description",
                                              :mail "user1@myDomain.com",
@@ -374,18 +374,18 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
                                               (swap! calls update :get-connection (fnil conj []) [%1])
-                                              (->result "user-conn"))
+                                              (r/just "user-conn"))
                            :bind? (mock calls :bind?
-                                        (->errors ["connection error"]))
+                                        (r/create nil ["connection error"]))
                            :modify (mock calls :modify
-                                         (->result {}))
+                                         (r/just {}))
                            :release-connection (mock calls :release-connection nil)})]
 
           (is (= [nil ["Invalid credentials"]]
@@ -397,18 +397,18 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
                                               (swap! calls update :get-connection (fnil conj []) [%1])
-                                              (->result "user-conn"))
+                                              (r/just "user-conn"))
                            :bind? (mock calls :bind?
-                                        (->result false))
+                                        (r/just false))
                            :modify (mock calls :modify
-                                         (->result {}))
+                                         (r/just {}))
                            :release-connection (mock calls :release-connection nil)})]
 
           (is (= [nil ["Invalid credentials"]]
@@ -420,18 +420,18 @@
                           directory-base
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
-                                         (->result
+                                         (r/just
                                            [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
                                              :pwdChangedTime "20180821105506Z"}]))
                            :lget (mock calls :lget
-                                       (->result {:pwdMaxAge "7200"}))
+                                       (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
                                               (swap! calls update :get-connection (fnil conj []) [%1])
-                                              (->result "user-conn"))
+                                              (r/just "user-conn"))
                            :bind? (mock calls :bind?
-                                        (->result true))
+                                        (r/just true))
                            :modify (mock calls :modify
-                                         (->errors ["invalid update"]))
+                                         (r/create nil ["invalid update"]))
                            :release-connection (mock calls :release-connection nil)})]
 
           (is (= [nil ["invalid update"]]

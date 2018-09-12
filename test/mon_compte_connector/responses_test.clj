@@ -1,6 +1,6 @@
 (ns mon-compte-connector.responses-test
   (:require [mon-compte-connector.responses :refer :all]
-            [mon-compte-connector.result :refer [->errors ->result]]
+            [mon-compte-connector.result :as r]
             [clojure.test :refer [deftest testing is are]]
             [mon-compte-connector.example :refer [example]]))
 
@@ -13,54 +13,54 @@
 
       (= error (user-error result?))
 
-      {:result? (->errors ["Token is expired (11871316436)"])
+      {:result? (r/create nil ["Token is expired (11871316436)"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["token is expired"]}}}
 
-      {:result? (->errors ["Message seems corrupt or tempered with"])
+      {:result? (r/create nil ["Message seems corrupt or tempered with"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["invalid credentials"]}}}
 
-      {:result? (->errors ["User not found"
+      {:result? (r/create nil ["User not found"
                            "Invalid credentials"
                            "connection error"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["invalid credentials"]}}}
 
-      {:result? (->errors ["User not found"
+      {:result? (r/create nil ["User not found"
                            "Password does not pass quality checks"
                            "connection error"])
        :error {:status 400
                :body {:status "BadRequest"
                       :messages ["Password does not pass quality checks"]}}}
 
-      {:result? (->errors ["User not found"
+      {:result? (r/create nil ["User not found"
                            "connection error"
                            "User not found"])
        :error {:status 500
                :body {:status "InternalServerError"
                       :messages ["internal server error"]}}}
 
-      {:result? (->errors ["User not found"
+      {:result? (r/create nil ["User not found"
                            "User not found"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["invalid credentials"]}}}
 
-      {:result? (->errors ["Code is invalid"])
+      {:result? (r/create nil ["Code is invalid"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["Code is invalid"]}}}
 
-      {:result? (->errors ["One-time token is invalid"])
+      {:result? (r/create nil ["One-time token is invalid"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["One-time token is invalid"]}}}
 
-      {:result? (->errors ["mail is invalid"])
+      {:result? (r/create nil ["mail is invalid"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["mail is invalid"]}}}))
@@ -78,7 +78,7 @@
                           :passworddExpirationDate "2018-08-26T14:32:29Z"},
                    :token "eyJhbGciOiJIUzI1NiJ9"}}
            (user-token
-             (->result
+             (r/just
                {:user {:description "This is User11's description",
                        :phone "+3312345678",
                        :uid "us11",
@@ -93,7 +93,7 @@
             :body {:status "Unauthorized"
                    :messages ["invalid credentials"]}}
            (user-token
-             (->errors ["User not found"])))))
+             (r/create nil ["User not found"])))))
 
   (testing "user-info"
     (is (= {:status 200,
@@ -106,7 +106,7 @@
                           :passwordMaxAge 7200,
                           :passworddExpirationDate "2018-08-26T14:32:29Z"}}}
            (user-info
-             (->result
+             (r/just
                {:description "This is User11's description",
                 :phone "+3312345678",
                 :uid "us11",
@@ -120,7 +120,7 @@
             :body {:status "Unauthorized"
                    :messages ["invalid credentials"]}}
            (user-info
-             (->errors ["User not found"])))))
+             (r/create nil ["User not found"])))))
 
 
   (testing "user-code"
@@ -129,7 +129,7 @@
                    :messages []
                    :code "456123"}}
            (user-code
-             (->result
+             (r/just
                {:user {:description "This is User11's description",
                        :phone "+3312345678",
                        :uid "us11",
@@ -144,7 +144,7 @@
             :body {:status "Unauthorized"
                    :messages ["invalid credentials"]}}
            (user-code
-             (->errors ["User not found"])))))
+             (r/create nil ["User not found"])))))
 
 
   (testing "user-ott"
@@ -153,7 +153,7 @@
                    :messages []
                    :token "eyJhbGciOiJIUzI1NiJ9"}}
            (user-ott
-             (->result
+             (r/just
                {:user {:description "This is User11's description",
                        :phone "+3312345678",
                        :uid "us11",
@@ -168,7 +168,7 @@
             :body {:status "Unauthorized"
                    :messages ["invalid credentials"]}}
            (user-ott
-             (->errors ["User not found"])))))
+             (r/create nil ["User not found"])))))
 
   (testing "user-reset-pwd"
     (is (= {:status 200,
@@ -181,8 +181,8 @@
                           :passwordMaxAge 7200,
                           :passworddExpirationDate "2018-08-26T14:32:29Z"}}}
            (user-reset-pwd
-             (->result {:mail "user11@domain1.com"})
-             (->result
+             (r/just {:mail "user11@domain1.com"})
+             (r/just
                {:description "This is User11's description",
                 :phone "+3312345678",
                 :uid "us11",
@@ -196,8 +196,8 @@
             :body {:status "Unauthorized"
                    :messages ["token is expired"]}}
            (user-reset-pwd
-             (->errors ["Token is expired (31486389789)"])
-             (->result
+             (r/create nil ["Token is expired (31486389789)"])
+             (r/just
                {:description "This is User11's description",
                 :phone "+3312345678",
                 :uid "us11",
@@ -211,5 +211,5 @@
             :body {:status "Unauthorized"
                    :messages ["invalid credentials"]}}
            (user-reset-pwd
-             (->result {:mail "user11@domain1.com"})
-             (->errors ["User not found"]))))))
+             (r/just {:mail "user11@domain1.com"})
+             (r/create nil ["User not found"]))))))

@@ -1,11 +1,11 @@
-:base_url = https://k8s.amaris.ovh:30446
+# :base_url = https://k8s.amaris.ovh:30446
 # :base_url = http://k8s.amaris.ovh:30080/mon-compte-connector/clj
-# :base_url = http://localhost:8080:
+:base_url = http://localhost:8080
 :user_mail = user11@domain1.com
 :user_pass = Password11
 :user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
 :device-uid = yrn8932n7m0rx49t048x80t35300
-:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjY3MDA5MX0.kakLqiSPa7x48krZrqfI2upTvxwIsdKXqVdxcH1ndL0
+:token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjc3NDE0OX0.6-NiY8RbLLW5i6gecyt1ldpzB99M4VVLD8gSueCd-fs
 
 # Create auth token
 
@@ -153,7 +153,7 @@ X-MyAccountApp-Device-ID: :device-uid
 
 {
   "mail": "user22@domain2.com",
-  "code": 4888
+  "code": 445004
 }
 
 # Reset password
@@ -164,6 +164,6 @@ X-MyAccountApp-Device-ID: :device-uid
 
 {
   "mail": "user22@domain2.com",
-  "OTT": "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjIyQGRvbWFpbjIuY29tIiwiZXhwIjoxNTM2NDU4NTUyfQ.tVJroaU6L6WFJtk-RGKPdGYFoR5rtSuvBwpX3oc3OYY",
+  "OTT": "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjIyQGRvbWFpbjIuY29tIiwiZXhwIjoxNTM2Nzc1MzkwfQ.iG6rkPW812zvujAHNtLI7fz2DmB-KOpMFv__Se5-0M4",
   "newPassword": "hello"
 }

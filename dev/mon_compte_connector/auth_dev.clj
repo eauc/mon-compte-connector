@@ -2,7 +2,7 @@
   (:import java.util.Date)
   (:require [mon-compte-connector.auth :refer :all]
             [clj-time.core :as time]
-            [mon-compte-connector.result :as result :refer [->result ->errors]]))
+            [mon-compte-connector.result :as r]))
 
 
 (comment

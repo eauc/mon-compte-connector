@@ -1,52 +1,33 @@
 (ns mon-compte-connector.result
-  (:require [clojure.pprint :refer [pprint]]))
+  (:require [clojure.pprint :refer [pprint]]
+            [mon-compte-connector.maybe :as maybe]
+            [mon-compte-connector.worker :as worker]))
 
 
-(def make-result vector)
+(defn create
+  [value logs]
+  (worker/create (maybe/just value) logs))
 
 
-(defn ->result
-  ([value error]
-   [value (when (nil? value) [error])])
-  ([value]
-   [value nil]))
+(def just (comp worker/just maybe/just))
 
 
-(defn ->errors
-  [errors]
-  [nil errors])
+(def value (comp maybe/value worker/value))
 
 
-(defn add-errors
-  [[result errors] new-errors]
-  [result (concat errors new-errors)])
+(def logs worker/logs)
 
 
-(defn value
-  ([result? default]
-   (let [v (first result?)]
-     (if (nil? v) default v)))
-  ([result?]
-   (value result? nil)))
+(def ok? (comp maybe/ok? worker/value))
 
 
-(def errors second)
-
-
-(def ok? (comp not nil? first))
-
-
-(defn apply-or-error
-  [prev? fn & args]
-  (if-not (ok? prev?)
-    prev?
-    (let [result? (apply fn (value prev?) args)]
-      (make-result (value result?)
-                   (concat (or (errors prev?) []) (errors result?))))))
+(defn bind
+  [prev-result fn & args]
+  (worker/bind prev-result #(apply maybe/bind % fn args)))
 
 
 (defmacro err->
   [val & fns]
-  (let [fns (for [f fns] `(apply-or-error ~@f))]
+  (let [fns (for [f fns] `(bind ~@f))]
     `(-> ~val
          ~@fns)))

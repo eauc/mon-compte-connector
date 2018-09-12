@@ -3,7 +3,7 @@
   (:require [mon-compte-connector.auth :refer :all]
             [clojure.test :as t :refer [deftest testing is are]]
             [clj-time.core :as time]
-            [mon-compte-connector.result :as result :refer [->errors ->result]]
+            [mon-compte-connector.result :as r]
             [mon-compte-connector.example :refer [example]]))
 
 
@@ -18,7 +18,7 @@
                        :alg :hs256
                        :now now
                        :exp-delay (time/seconds 5)})
-                    result/value)]
+                    r/value)]
 
       (is (= user (:user token)))
 
@@ -71,19 +71,19 @@
                    :gen-key (constantly "secretKey")}]
 
       (is (= {:code 342117 :user {:mail "user11@domain1.com"}}
-             (result/value (user-code {:mail "user11@domain1.com"} options))))
+             (r/value (user-code {:mail "user11@domain1.com"} options))))
       (is (= {"user11@domain1.com" "secretKey"}
              (deref (:store options))))
 
       (is (= {:code 342117 :user {:mail "user11@domain1.com"}}
-             (result/value (user-code {:mail "user11@domain1.com"}
+             (r/value (user-code {:mail "user11@domain1.com"}
                                       (assoc options :date (Date. 290000)))))
           "within same time-step")
       (is (= {"user11@domain1.com" "secretKey"}
              (deref (:store options))))
 
       (is (= {:code 439975 :user {:mail "user11@domain1.com"}}
-             (result/value (user-code {:mail "user11@domain1.com"}
+             (r/value (user-code {:mail "user11@domain1.com"}
                                       (assoc options :date (Date. 310000)))))
           "within another time-step")))
 
@@ -95,29 +95,29 @@
                    :gen-key (constantly "anotherKey")}
           mail "user11@domain1.com"]
 
-      (is (= (->result mail)
+      (is (= (r/just mail)
              (user-code-valid? mail 342117 options)))
 
-      (is (= (->result mail)
+      (is (= (r/just mail)
              (user-code-valid? mail 342117
                                (assoc options :date (Date. 290000))))
           "before expiration")
 
-      (is (= (result/make-result nil ["Code is invalid"])
+      (is (= (r/create nil ["Code is invalid"])
              (user-code-valid? mail 342117
                                (assoc options :date (Date. 310000))))
           "after expiration")
 
-      (is (= (result/make-result nil ["Code is invalid"])
+      (is (= (r/create nil ["Code is invalid"])
              (user-code-valid? "user22@domain2.com" 123456 options))
           "another user")
 
-      (is (= (result/make-result nil ["Code is invalid"])
+      (is (= (r/create nil ["Code is invalid"])
              (user-code-valid? mail 123456
                                (assoc options :date (Date. 310000))))
           "invalid code")))
 
-  (testing "onte-time-claim"
+  (testing "one-time-claim"
     (let [now (time/date-time 1986 10 14 4 3 27 456)
           options {:secret "mySecret"
                    :exp-delay (time/seconds 10)
@@ -125,12 +125,12 @@
                    :store (atom {})
                    :now now}
           mail "user11@domain1.com"
-          {:keys [token]} (result/value (one-time-token mail options))]
+          {:keys [token]} (r/value (one-time-token mail options))]
 
-      (is (= (->result {:exp 529646617 :mail mail})
+      (is (= (r/just {:exp 529646617 :mail mail})
              (one-time-claim mail token options)))
 
-      (is (= (->errors ["One-time token is invalid"])
+      (is (= (r/create nil ["One-time token is invalid"])
              (one-time-claim mail token
                              (assoc options :now (time/plus now (time/seconds 9)))))
           "token is valid only one time"))
@@ -142,28 +142,28 @@
                    :store (atom {})
                    :now now}
           mail "user11@domain1.com"
-          {:keys [token]} (result/value (one-time-token mail options))]
+          {:keys [token]} (r/value (one-time-token mail options))]
 
-      (is (= (->errors ["Token is expired (529646617)"])
+      (is (= (r/create nil ["Token is expired (529646617)"])
              (one-time-claim mail token
                              (assoc options :now (time/plus now (time/seconds 11)))))
           "token is expired")
 
-      (is (= (->errors ["Message seems corrupt or manipulated."])
+      (is (= (r/create nil ["Message seems corrupt or manipulated."])
              (one-time-claim mail "toto" options))
           "token is invalid")
 
-      (is (= (->errors ["Message seems corrupt or manipulated."])
+      (is (= (r/create nil ["Message seems corrupt or manipulated."])
              (one-time-claim mail token (assoc options :alg :hs512)))
           "alg is invalid")
 
-      (is (= (->errors ["Message seems corrupt or manipulated."])
+      (is (= (r/create nil ["Message seems corrupt or manipulated."])
              (one-time-claim mail token (assoc options :secret "otherSecret")))
           "secret is invalid")
 
-      (is (= (->errors ["One-time token is invalid"])
+      (is (= (r/create nil ["One-time token is invalid"])
              (one-time-claim "user22@domain2.com" token options))
           "other user")
 
-      (is (= (->result {:exp 529646617 :mail mail})
+      (is (= (r/just {:exp 529646617 :mail mail})
              (one-time-claim mail token options))))))

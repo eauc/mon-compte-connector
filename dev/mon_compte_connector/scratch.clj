@@ -7,7 +7,7 @@
             [mon-compte-connector.directory :as dir]
             [mon-compte-connector.event-log :as event-log]
             [mon-compte-connector.ldap-directory :as ld]
-            [mon-compte-connector.result :as result :refer [->result ->errors err->]]
+            [mon-compte-connector.result :as r :refer [err->]]
             [clojure.tools.logging :as log]
             [clojure.set :as set]))
 
@@ -62,7 +62,7 @@
        :users-base-dn "dc=amaris,dc=ovh"
        :default-pwd-policy "cn=passwordDefault,ou=pwpolicies,dc=amaris,dc=ovh"})
 
-    (def pool (result/value (ld/make-directory-pool
+    (def pool (r/value (ld/make-directory-pool
                               {:server1 {:config config1
                                          :schema {:user user-schema
                                                   :pwd-policy {}}}
