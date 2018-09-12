@@ -3,14 +3,17 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.tools.logging :as log]
             [integrant.core :as ig]
-            [mon-compte-connector.result :as result :refer [->result ->errors err->]]
+            [lock-key.core :as lk]
+            [mon-compte-connector.cipher :as cipher]
             [mon-compte-connector.directory :as dir :refer [Directory DirectoryFilters]]
             [mon-compte-connector.directory-pool :as dir-pool :refer [->DirectoryPool]]
             [mon-compte-connector.ldap :as ldap]
             [mon-compte-connector.ldap-directory.filter :as f]
             [mon-compte-connector.ldap-directory.pwd :as p]
             [mon-compte-connector.ldap-directory.pwd-policy :as pp]
-            [mon-compte-connector.ldap-directory.user :as u]))
+            [mon-compte-connector.ldap-directory.user :as u]
+            [mon-compte-connector.result :as result :refer [->result ->errors err->]]
+            [cheshire.core :as cs]))
 
 
 (defn conn
@@ -176,8 +179,17 @@
            (filter (fn [[k v]] (not (nil? v))))))))
 
 
-(defmethod ig/init-key :directories [_ {:keys [servers schemas]}]
-  (let [configs (map (fn [[name {:keys [schema] :as config}]]
+
+(defn decrypt-config
+  [{:keys [admin encrypted] :as raw-config}]
+  (if-not encrypted
+    raw-config
+    (cipher/decrypt encrypted (get admin :secret))))
+
+
+(defmethod ig/init-key :directories [_ raw-config]
+  (let [{:keys [servers schemas]} (decrypt-config raw-config)
+        configs (map (fn [[name {:keys [schema] :as config}]]
                        [name {:config (dissoc config :schema)
                               :schema (get schemas schema (get schema :default))}]) servers)
         pool? (make-directory-pool configs)]

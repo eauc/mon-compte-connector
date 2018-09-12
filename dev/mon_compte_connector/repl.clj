@@ -24,6 +24,14 @@
                              :certs-file-path "./certs/connector.p12"
                              :certs-file-pwd "123456"})))
 
+;; (defn start
+;;   []
+;;   (reset! system (app/start {:config-file-path "config.dev.json"})))
+
+;; (defn start
+;;   []
+;;   (reset! system (app/start {})))
+
 
 (defn reset
   []

@@ -41,7 +41,7 @@
   (send-reset-code [this reset-code] "Send reset code request"))
 
 
-(defrecord Admin [base-url certs]
+(defrecord Admin [base-url certs secret]
   AdminAPI
   (send-log [this log] (-send log "/connectors/log" this))
   (send-notification [this notification] (-send notification "/notifications" this))
@@ -52,4 +52,4 @@
   (when (nil? base-url)
     (println "No AdminAPI URL defined in config")
     (throw (ex-info {:admin-config config} "No AdminAPI URL defined in config")))
-  (Admin. base-url (:client certs)))
+  (Admin. base-url (:client certs) "mySecret"))

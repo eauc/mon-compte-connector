@@ -12,7 +12,10 @@
 
 (defn start
   [options]
-  (let [config (cfg/config options)]
+  (let [raw-config (cfg/load options)]
     (println "Loading config...")
-    (pprint config)
-    (ig/init config)))
+    (pprint raw-config)
+    (let [system (ig/init (cfg/init raw-config options))]
+      (when (nil? (get-in raw-config [:directories :encrypted]))
+        (cfg/store raw-config (get-in system [:admin :secret])))
+      system)))
