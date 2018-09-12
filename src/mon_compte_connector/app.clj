@@ -17,5 +17,5 @@
     (pprint raw-config)
     (let [system (ig/init (cfg/init raw-config options))]
       (when (nil? (get-in raw-config [:directories :encrypted]))
-        (cfg/store raw-config (get-in system [:admin :secret])))
+        (cfg/store raw-config (get-in system [:cipher :encrypt])))
       system)))

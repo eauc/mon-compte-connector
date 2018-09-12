@@ -183,10 +183,10 @@
 
 
 (defn decrypt-config
-  [{:keys [admin encrypted] :as raw-config}]
+  [{:keys [cipher encrypted] :as raw-config}]
   (if-not encrypted
     raw-config
-    (cipher/decrypt encrypted (get admin :secret))))
+    ((:decrypt cipher) encrypted)))
 
 
 (defmethod ig/init-key :directories [_ raw-config]

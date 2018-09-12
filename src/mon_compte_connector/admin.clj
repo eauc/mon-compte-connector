@@ -23,7 +23,8 @@
       (-> (client/post url request)
           :body
           ((fn [result]
-             (log/info {:notification params
+             (log/info {:path path
+                        :params params
                         :result result} (str "Send " path " success"))
              (pprint {:notification params
                       :result result})
@@ -36,6 +37,7 @@
 
 
 (defprotocol AdminAPI
+  (register [this] "Register connector at startup")
   (send-log [this log] "Send log")
   (send-notification [this notification] "Send notification create/update request")
   (send-reset-code [this reset-code] "Send reset code request"))
@@ -43,6 +45,7 @@
 
 (defrecord Admin [base-url certs secret]
   AdminAPI
+  (register [this] (-send {} "/connectors/register" this))
   (send-log [this log] (-send log "/connectors/log" this))
   (send-notification [this notification] (-send notification "/notifications" this))
   (send-reset-code [this reset-code] (-send reset-code "/reset/code" this)))

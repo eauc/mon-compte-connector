@@ -29,6 +29,7 @@
   {:auth {}
    :certs {}
    :admin {}
+   :cipher {}
    :directories {}
    :routes {}
    :server {}})
@@ -40,7 +41,8 @@
       (assoc :certs {:certs-file-path certs-file-path
                      :certs-file-pwd certs-file-pwd})
       (assoc-in [:admin :certs] (ig/ref :certs))
-      (assoc-in [:directories :admin] (ig/ref :admin))
+      (assoc-in [:cipher :admin] (ig/ref :admin))
+      (assoc-in [:directories :cipher] (ig/ref :cipher))
       (assoc :routes {:admin (ig/ref :admin)
                       :auth (ig/ref :auth)
                       :directories (ig/ref :directories)})
@@ -49,8 +51,8 @@
 
 
 (defn store
-  [{:keys [directories] :as config} secret]
-  (let [encrypted-dirs (cipher/encrypt directories secret)
+  [{:keys [directories] :as config} encrypt]
+  (let [encrypted-dirs (encrypt directories)
         storable-config (assoc config :directories {:encrypted encrypted-dirs})]
     (-> (keystore/load-or-create)
         (keystore/set-data-entry "config" (:pwd keystore/default-ks) storable-config)
