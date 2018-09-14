@@ -4,7 +4,7 @@
     "http?": true,
     "ssl?": true,
     "ssl-port": 3443,
-    "client-auth": "need"
+    "client-auth": "none"
   },
   "admin": {
     "base-url": "https://k8s.amaris.ovh:30444"
@@ -23,7 +23,7 @@
     "servers": {
       "server1": {
         "host": {
-          "address": "default.mon-compte-ldap1",
+          "address": "mon-compte-ldap1.default",
           "port": 636
         },
         "ssl?": true,
@@ -37,7 +37,7 @@
       },
       "server2": {
         "host": {
-          "address": "default.mon-compte-ldap1",
+          "address": "mon-compte-ldap1.default",
           "port": 1636
         },
         "ssl?": true,
@@ -51,7 +51,7 @@
       },
       "server3": {
         "host": {
-          "address": "default.mon-compte-ldap2",
+          "address": "mon-compte-ldap2.default",
           "port": 636
         },
         "ssl?": true,

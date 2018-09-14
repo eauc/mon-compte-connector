@@ -1,3 +1,5 @@
+https://www.linode.com/docs/security/ssl/install-lets-encrypt-to-create-ssl-certificates/
+
 ** TODO
 
 - validate config
