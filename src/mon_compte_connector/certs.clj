@@ -8,29 +8,38 @@
 
 (defn extract-ks-certs
   [ks pwd]
-  (let [private-key (keystore/get-key ks "server-cert" pwd)
+  (let [client-private-key (keystore/get-key ks "client-cert" pwd)
         client-cert (.getCertificateChain ks "client-cert")
+        server-private-key (keystore/get-key ks "server-cert" pwd)
         server-cert (.getCertificateChain ks "server-cert")
+        amaris-root-ca (.getCertificate ks "amaris-root-ca")
+        amaris-ca (.getCertificate ks "amaris-ca")
         root-ca (.getCertificate ks "root-ca")
-        amaris-ca (.getCertificate ks "amaris-ca")]
+        le-ca (.getCertificate ks "le-ca")]
     (cond
-      (nil? private-key) (throw (ex-info "private key not found" {}))
+      (nil? client-private-key) (throw (ex-info "client private key not found" {}))
       (nil? client-cert) (throw (ex-info "client certificate not found" {}))
+      (nil? server-private-key) (throw (ex-info "server private key not found" {}))
       (nil? server-cert) (throw (ex-info "server certificate not found" {}))
-      (nil? root-ca) (throw (ex-info "root-ca certificate not found" {}))
+      (nil? amaris-root-ca) (throw (ex-info "amaris-root-ca certificate not found" {}))
       (nil? amaris-ca) (throw (ex-info "amaris-ca certificate not found" {}))
-      :else {:private-key private-key
+      (nil? root-ca) (throw (ex-info "root-ca certificate not found" {}))
+      (nil? le-ca) (throw (ex-info "le-ca certificate not found" {}))
+      :else {:server-private-key server-private-key
              :server-cert server-cert
+             :client-private-key client-private-key
              :client-cert client-cert
+             :amaris-root-ca amaris-root-ca
+             :amaris-ca amaris-ca
              :root-ca root-ca
-             :amaris-ca amaris-ca})))
+             :le-ca le-ca})))
 
 
 (defn ->client-ks
-  [{:keys [private-key client-cert root-ca amaris-ca]} pwd]
+  [{:keys [client-private-key client-cert amaris-root-ca amaris-ca]} pwd]
   (let [ks (doto (keystore/create)
-             (keystore/set-key "client-cert" pwd private-key client-cert)
-             (.setCertificateEntry "root-ca" root-ca)
+             (keystore/set-key "client-cert" pwd client-private-key client-cert)
+             (.setCertificateEntry "amaris-root-ca" amaris-root-ca)
              (.setCertificateEntry "amaris-ca" amaris-ca))]
     {:keystore ks
      :keystore-pass pwd
@@ -38,11 +47,11 @@
 
 
 (defn ->server-ks
-  [{:keys [private-key server-cert root-ca amaris-ca]} pwd]
+  [{:keys [server-private-key server-cert root-ca le-ca]} pwd]
   (let [ks (doto (keystore/create)
-             (keystore/set-key "server-cert" pwd private-key server-cert)
+             (keystore/set-key "server-cert" pwd server-private-key server-cert)
              (.setCertificateEntry "root-ca" root-ca)
-             (.setCertificateEntry "amaris-ca" amaris-ca))]
+             (.setCertificateEntry "le-ca" le-ca))]
     {:keystore ks
      :keystore-pass pwd} ))
 
@@ -65,16 +74,21 @@
     {server-ks :keystore} :server}]
   (try
     (let [pwd (:pwd keystore/default-ks)
-          private-key (keystore/get-key server-ks "server-cert" pwd)
+          client-private-key (keystore/get-key client-ks "client-cert" pwd)
           client-cert (.getCertificateChain client-ks "client-cert")
+          server-private-key (keystore/get-key server-ks "server-cert" pwd)
           server-cert (.getCertificateChain server-ks "server-cert")
           root-ca (.getCertificate server-ks "root-ca")
-          amaris-ca (.getCertificate server-ks "amaris-ca")]
+          le-ca (.getCertificate server-ks "le-ca")
+          amaris-root-ca (.getCertificate client-ks "amaris-root-ca")
+          amaris-ca (.getCertificate client-ks "amaris-ca")]
       (doto (keystore/load-or-create)
-        (keystore/set-key "client-cert" pwd private-key client-cert)
-        (keystore/set-key "server-cert" pwd private-key server-cert)
-        (.setCertificateEntry "root-ca" root-ca)
+        (keystore/set-key "client-cert" pwd client-private-key client-cert)
+        (keystore/set-key "server-cert" pwd server-private-key server-cert)
+        (.setCertificateEntry "amaris-root-ca" amaris-root-ca)
         (.setCertificateEntry "amaris-ca" amaris-ca)
+        (.setCertificateEntry "root-ca" root-ca)
+        (.setCertificateEntry "le-ca" le-ca)
         (keystore/store)))
     (catch Exception error
       (throw (ex-info (format "Error writing certificates in keystore '%s'"

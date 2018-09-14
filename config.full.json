@@ -23,7 +23,7 @@
     "servers": {
       "server1": {
         "host": {
-          "address": "default.mon-compte-ldap1",
+          "address": "localhost",
           "port": 636
         },
         "ssl?": true,
@@ -37,7 +37,7 @@
       },
       "server2": {
         "host": {
-          "address": "default.mon-compte-ldap1",
+          "address": "localhost",
           "port": 1636
         },
         "ssl?": true,
@@ -51,8 +51,8 @@
       },
       "server3": {
         "host": {
-          "address": "default.mon-compte-ldap2",
-          "port": 636
+          "address": "localhost",
+          "port": 637
         },
         "ssl?": true,
         "connect-timeout": 1000,
@@ -69,10 +69,20 @@
         "user": {
           "object-class": "person",
           "attributes": {
-            "phone": "mobile"
+            "uid": "uid",
+            "description": "description",
+            "mail": "mail",
+            "phone": "phone",
+            "password": "userPassword",
+            "pwd-changed-time": "pwdChangedTime",
+            "pwd-policy": "pwdPolicySubentry"
           }
         },
-        "pwd-policy": {}
+        "pwd-policy": {
+          "attributes": {
+            "pwd-max-age": "pwdMaxAge"
+          }
+        }
       }
     }
   }

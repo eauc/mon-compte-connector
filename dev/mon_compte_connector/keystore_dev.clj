@@ -10,7 +10,7 @@
   
   (def ks
     (let [keystore (KeyStore/getInstance "PKCS12")]
-      (with-open [is (io/input-stream "./connector.p12")]
+      (with-open [is (io/input-stream "./certs/connector.p12")]
         (.load keystore is (.toCharArray "123456"))
         keystore)))
 
@@ -31,6 +31,8 @@
 
   (.getCertificate ks "root-ca")
   
+  (.getCertificate ks "amaris-root-ca")
+  
   (.getCertificate ks "amaris-ca")
 
   (.getCertificateChain ks "client-cert")
@@ -43,9 +45,11 @@
 
   (.setKeyEntry req-ks "client-cert"
                 (.getKey ks "client-cert" (.toCharArray "123456"))
-                (.toCharArray "789456")
+                (.toCharArray "456123")
                 (.getCertificateChain ks "client-cert"))
   (.getCertificate req-ks "client-cert")
+  (.setCertificateEntry req-ks "amaris-root-ca" (.getCertificate ks "amaris-root-ca"))
+  (.setCertificateEntry req-ks "amaris-ca" (.getCertificate ks "amaris-ca"))
   (.getKey req-ks "client-cert" (.toCharArray "789456"))
   (Collections/list (.aliases req-ks))
 
@@ -67,10 +71,31 @@
                 :keystore req-ks
                 ;; :keystore "./connector.p12"
                 ;; :keystore-type "pkcs12"
-                :keystore-pass "789456"
-                :trust-store trust-ks
+                :keystore-pass "456123"
+                :trust-store req-ks
                 })
 
+  (def test-certs
+    (:client (:certs @mon-compte-connector.repl/system)))
+
+  (def test-ks
+    (:keystore test-certs))
+
+  (Collections/list (.aliases test-ks))
+
+  (.getCertificate test-ks "client-cert")
+  (.getKey test-ks "client-cert" (.toCharArray "456123"))
+
+  (client/post "https://k8s.amaris.ovh:30444/v1/connectors/register"
+               {:content-type :json
+                :as :json
+                :keystore test-ks
+                ;; :keystore "./connector.p12"
+                ;; :keystore-type "pkcs12"
+                :keystore-pass "456123"
+                :trust-store test-ks
+                })
+  
   (client/post "https://k8s.amaris.ovh:30444/v1/connectors/register"
                {:content-type :json
                 :as :json
