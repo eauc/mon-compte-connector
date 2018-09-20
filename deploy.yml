@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
       - name: mon-compte-connector-clj
-        image: 127.0.0.1:5000/mon-compte-connector:clj
+        image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE}
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
