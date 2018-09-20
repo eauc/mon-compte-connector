@@ -1,0 +1,30 @@
+variables:
+  DOCKER_IMAGE: "${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME}"
+  DOCKER_LOCAL_REGISTRY_PORT: "5000"
+
+stages:
+  - build
+  - test
+  - publish
+  - deploy
+
+build-image:
+  stage: build
+  script:
+    - docker build -t ${DOCKER_IMAGE} .
+
+unit-tests:
+  stage: test
+  script:
+    - docker run --rm ${DOCKER_IMAGE} lein eftest
+
+push-registry:
+  stage: publish
+  script:
+    - docker tag ${DOCKER_IMAGE} 127.0.0.1:${DOCKER_LOCAL_REGISTRY_PORT}/${DOCKER_IMAGE}
+    - ssh -L ${DOCKER_LOCAL_REGISTRY_PORT}:${DOCKER_REGISTRY_HOST}:${DOCKER_REGISTRY_PORT} localhost docker push 127.0.0.1:${DOCKER_LOCAL_REGISTRY_PORT}/${DOCKER_IMAGE}
+
+deploy_test:
+  stage: deploy
+  script:
+    - cat deploy.yml | CONFIG_FILE=$(cat config.ci.json | base64 -w 0) CERTS_FILE=$(cat certs/connector.p12 | base64 -w 0) envsubst | kubectl apply -f -
