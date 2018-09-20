@@ -75,7 +75,7 @@
                           :phoneNumber "+3312345678",
                           :passwordChangedTime "2018-08-26T12:32:29Z",
                           :passwordMaxAge 7200,
-                          :passworddExpirationDate "2018-08-26T14:32:29Z"},
+                          :passwordExpirationDate "2018-08-26T14:32:29Z"},
                    :token "eyJhbGciOiJIUzI1NiJ9"}}
            (user-token
              (r/just
@@ -104,7 +104,7 @@
                           :phoneNumber "+3312345678",
                           :passwordChangedTime "2018-08-26T12:32:29Z",
                           :passwordMaxAge 7200,
-                          :passworddExpirationDate "2018-08-26T14:32:29Z"}}}
+                          :passwordExpirationDate "2018-08-26T14:32:29Z"}}}
            (user-info
              (r/just
                {:description "This is User11's description",
@@ -179,7 +179,7 @@
                           :phoneNumber "+3312345678",
                           :passwordChangedTime "2018-08-26T12:32:29Z",
                           :passwordMaxAge 7200,
-                          :passworddExpirationDate "2018-08-26T14:32:29Z"}}}
+                          :passwordExpirationDate "2018-08-26T14:32:29Z"}}}
            (user-reset-pwd
              (r/just {:mail "user11@domain1.com"})
              (r/just

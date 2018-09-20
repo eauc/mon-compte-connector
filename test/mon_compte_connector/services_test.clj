@@ -54,7 +54,7 @@
    :phoneNumber "+3312345678",
    :passwordChangedTime "2018-08-26T12:32:29Z",
    :passwordMaxAge 7200,
-   :passworddExpirationDate "2018-08-26T14:32:29Z"})
+   :passwordExpirationDate "2018-08-26T14:32:29Z"})
 
 (deftest services-test
   (testing "user-login"
@@ -478,7 +478,7 @@
                               :phoneNumber "+3312345678",
                               :passwordChangedTime "2018-08-26T12:32:29Z",
                               :passwordMaxAge 7200,
-                              :passworddExpirationDate "2018-08-26T14:32:29Z"}}}
+                              :passwordExpirationDate "2018-08-26T14:32:29Z"}}}
                (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token token

@@ -82,7 +82,7 @@
       (set/rename-keys {:phone :phoneNumber
                         :pwd-changed-time :passwordChangedTime
                         :pwd-max-age :passwordMaxAge
-                        :pwd-expiration-date :passworddExpirationDate})
+                        :pwd-expiration-date :passwordExpirationDate})
       (dissoc :uid :dn :server)))
 
 
