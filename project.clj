@@ -30,5 +30,4 @@
              :repl {}
              :uberjar {:main mon-compte-connector.core
                        :aot :all}}
-  :repl-options {:init-ns mon-compte-connector.repl
-                 :init (mon-compte-connector.repl/init)})
+  :repl-options {:init-ns mon-compte-connector.repl})
