@@ -39,19 +39,11 @@
 (def user-not-found "User not found")
 
 
-(defn first-user-found
-  [[user]]
-  (if (nil? user)
-    (r/create nil [user-not-found])
-    (r/just user)))
-
-
 (defn user
   [{:keys [schema search] :as directory} filter]
   (let [user-schema (get schema :user)]
     (err-> (r/just (u/query directory filter))
-           (search (conn directory))
-           (first-user-found)
+           (search (conn directory) user-not-found)
            (u/map-attributes user-schema)
            (user-with-pwd-expiration-date directory)
            (#(r/just (dissoc % :pwd-policy))))))

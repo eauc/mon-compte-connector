@@ -8,4 +8,4 @@
   [{:keys [dn] :as user} user-schema new-pwd]
   (let [user-pwd-key (-> (get-in user-schema [:attributes :password] "userPassword") keyword)]
     (r/just {:dn dn :replace {user-pwd-key new-pwd}
-             :post-read (u/read-attributes user-schema)})))
+             :post-read (:attributes (u/read-attributes user-schema))})))

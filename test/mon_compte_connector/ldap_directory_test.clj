@@ -8,9 +8,9 @@
 (deftest ldap-directory-test
 
   (let [mock (fn [calls fn-name result]
-               #(do
-                  (swap! calls update fn-name (fnil conj []) [%1 %2])
-                  result))
+               (fn [& args]
+                 (swap! calls update fn-name (fnil conj []) args)
+                 result))
         directory-base {:conn (atom (r/just "conn"))
                         :config {:users-base-dn "user-base-dn"
                                  :default-pwd-policy "default-pwd-policy"}
@@ -24,11 +24,11 @@
                           directory-base
                           {:search (mock calls :search
                                          (r/just
-                                           [{:description "This is John Doe's description",
-                                             :mail "user1@myDomain.com",
-                                             :pwdChangedTime "20180821105506Z",
-                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-                                             :phone "+3312345678"}]))
+                                           {:description "This is John Doe's description",
+                                            :mail "user1@myDomain.com",
+                                            :pwdChangedTime "20180821105506Z",
+                                            :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                            :phone "+3312345678"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))})]
 
@@ -42,9 +42,10 @@
                   []]
                  (user directory "test-filter")))
 
-          (is (= [[{:base-dn "user-base-dn",
-                    :attributes [:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry],
-                    :filter "test-filter"} "conn"]]
+          (is (= [[{:base-dn "user-base-dn"
+                    :attributes [:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry :photo]
+                    :byte-valued [:photo]
+                    :filter "test-filter"} "conn" "User not found"]]
                  (:search @calls))
               "should search the user in the ldap")
 
@@ -56,16 +57,17 @@
         (let [calls (atom {})
               directory (merge
                           directory-base
-                          {:schema {:user {:attributes {:phone "mobile"}}
+                          {:schema {:user {:attributes {:phone "mobile"}
+                                           :binary-attributes {:photo "jpegPhoto"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
                                          (r/just
-                                           [{:description "This is John Doe's description",
-                                             :mail "user1@myDomain.com",
-                                             :pwdPolicySubentry "pwd-policy-user"
-                                             :pwdChangedTime "20180821105506Z",
-                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-                                             :mobile "+3312345678"}]))
+                                           {:description "This is John Doe's description",
+                                            :mail "user1@myDomain.com",
+                                            :pwdPolicySubentry "pwd-policy-user"
+                                            :pwdChangedTime "20180821105506Z",
+                                            :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                            :mobile "+3312345678"}))
                            :lget (mock calls :lget
                                        (r/just {:passwordMaxAge "45800"}))})]
 
@@ -79,9 +81,10 @@
                   []]
                  (user directory "test-filter")))
 
-          (is (= [[{:base-dn "user-base-dn",
-                    :attributes [:uid :description :mail :mobile :pwdChangedTime :pwdPolicySubentry],
-                    :filter "test-filter"} "conn"]]
+          (is (= [[{:base-dn "user-base-dn"
+                    :attributes [:uid :description :mail :mobile :pwdChangedTime :pwdPolicySubentry :jpegPhoto]
+                    :byte-valued [:jpegPhoto]
+                    :filter "test-filter"} "conn" "User not found"]]
                  (:search @calls))
               "should search the user in the ldap")
 
@@ -96,7 +99,7 @@
                           {:schema {:user {:attributes {:phone "mobile"}}
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
-                                         (r/just []))
+                                         (r/create nil ["User not found"]))
                            :lget (mock calls :lget
                                        (r/create nil ["object not found"]))})]
 
@@ -128,12 +131,12 @@
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
                                          (r/just
-                                           [{:description "This is John Doe's description",
-                                             :mail "user1@myDomain.com",
-                                             :pwdPolicySubentry "pwd-policy-user"
-                                             :pwdChangedTime "20180821105506Z",
-                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-                                             :mobile "+3312345678"}]))
+                                           {:description "This is John Doe's description",
+                                            :mail "user1@myDomain.com",
+                                            :pwdPolicySubentry "pwd-policy-user"
+                                            :pwdChangedTime "20180821105506Z",
+                                            :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                            :mobile "+3312345678"}))
                            :lget (mock calls :lget (r/just nil))})]
 
           (is (= [nil ["password policy not found"]]
@@ -147,12 +150,12 @@
                                     :pwd-policy {:attributes {:pwd-max-age "passwordMaxAge"}}}
                            :search (mock calls :search
                                          (r/just
-                                           [{:description "This is John Doe's description",
-                                             :mail "user1@myDomain.com",
-                                             :pwdPolicySubentry "pwd-policy-user"
-                                             :pwdChangedTime "20180821105506Z",
-                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-                                             :mobile "+3312345678"}]))
+                                           {:description "This is John Doe's description",
+                                            :mail "user1@myDomain.com",
+                                            :pwdPolicySubentry "pwd-policy-user"
+                                            :pwdChangedTime "20180821105506Z",
+                                            :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                            :mobile "+3312345678"}))
                            :lget (mock calls :lget
                                        (r/create nil ["object not found"]))})]
 
@@ -168,11 +171,11 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:description "This is John Doe's description",
-                                             :mail "user1@myDomain.com",
-                                             :pwdChangedTime "20180821105506Z",
-                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-                                             :phone "+3312345678"}]))
+                                           {:description "This is John Doe's description",
+                                            :mail "user1@myDomain.com",
+                                            :pwdChangedTime "20180821105506Z",
+                                            :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                            :phone "+3312345678"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :bind? (mock calls :bind?
@@ -204,11 +207,11 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:description "This is John Doe's description",
-                                             :mail "user1@myDomain.com",
-                                             :pwdChangedTime "20180821105506Z",
-                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
-                                             :phone "+3312345678"}]))
+                                           {:description "This is John Doe's description",
+                                            :mail "user1@myDomain.com",
+                                            :pwdChangedTime "20180821105506Z",
+                                            :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                            :phone "+3312345678"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :bind? (mock calls :bind?
@@ -226,8 +229,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :modify (mock calls :modify
@@ -268,8 +271,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :modify (mock calls :modify
@@ -287,8 +290,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
@@ -348,8 +351,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :get-connection (fn [_] (r/create nil ["connection error"]))
@@ -375,8 +378,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
@@ -398,8 +401,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
@@ -421,8 +424,8 @@
                           {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
                            :search (mock calls :search
                                          (r/just
-                                           [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
-                                             :pwdChangedTime "20180821105506Z"}]))
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
                            :lget (mock calls :lget
                                        (r/just {:pwdMaxAge "7200"}))
                            :get-connection #(do
@@ -435,22 +438,4 @@
                            :release-connection (mock calls :release-connection nil)})]
 
           (is (= [nil ["invalid update"]]
-                 (user-pwd-update directory "user1@myDomain.com" "oldPass" "newPass")))))))
-
-
-  (testing "first-user-found"
-    (example
-
-      [users result]
-
-      (= result (first-user-found users))
-
-      {:describe "found"
-       :users [{:uid "userUid"}
-               {:uid "userUid2"}]
-       :result [{:uid "userUid"} nil]}
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-      {:describe "not found"
-       :users []
-       :result [nil ["User not found"]]})))
+                 (user-pwd-update directory "user1@myDomain.com" "oldPass" "newPass"))))))))

@@ -16,12 +16,13 @@
                 :attributes {:description "description"
                              :mail "mail"
                              :phone "mobile"}}
-       :attrs {:uid :uid
-               :description :description,
-               :mail :mail,
-               :phone :mobile,
-               :pwd-changed-time :pwdChangedTime
-               :pwd-policy :pwdPolicySubentry}}
+       :attrs {:attributes {:uid :uid
+                            :description :description,
+                            :mail :mail,
+                            :phone :mobile,
+                            :pwd-changed-time :pwdChangedTime
+                            :pwd-policy :pwdPolicySubentry}
+               :binary-attributes {:photo :photo}}}
 
       {:describe "custom attributes"
        :schema {:objectclass "person"
@@ -31,23 +32,29 @@
                              :phone "-phone"
                              :pwd-changed-time "-pwdChanged"
                              :pwd-policy "-pwdPolicySubentry"
-                             :password "-password"}}
-       :attrs {:uid :-id
-               :description :-desc,
-               :mail :-email,
-               :phone :-phone,
-               :pwd-changed-time :-pwdChanged
-               :pwd-policy :-pwdPolicySubentry}}
+                             :password "-password"}
+                :binary-attributes {:photo "-photo"
+                                    :custom-binary "-customBinary"}}
+       :attrs {:attributes {:uid :-id
+                            :description :-desc,
+                            :mail :-email,
+                            :phone :-phone,
+                            :pwd-changed-time :-pwdChanged
+                            :pwd-policy :-pwdPolicySubentry}
+               :binary-attributes {:photo :-photo
+                                   :custom-binary :-customBinary}}}
 
       {:describe "default attributes"
        :schema {:objectclass "person"
-                :attributes {}}
-       :attrs {:uid :uid
-               :description :description,
-               :mail :mail,
-               :phone :phone,
-               :pwd-changed-time :pwdChangedTime
-               :pwd-policy :pwdPolicySubentry}}))
+                :attributes {}
+                :binary-attributes {}}
+       :attrs {:attributes {:uid :uid
+                            :description :description,
+                            :mail :mail,
+                            :phone :phone,
+                            :pwd-changed-time :pwdChangedTime
+                            :pwd-policy :pwdPolicySubentry}
+               :binary-attributes {:photo :photo}}}))
 
 
   (testing "map-attributes"
@@ -121,17 +128,21 @@
       {:describe "default attributes"
        :directory {:config {:users-base-dn "dc=amaris,dc=ovh"}
                    :schema {:user {:objectclass "person"
-                                   :attributes {}}}}
+                                   :attributes {}
+                                   :binary-attributes {}}}}
        :filter "(uid=userUid)"
        :result {:base-dn "dc=amaris,dc=ovh",
-                :attributes [:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry],
+                :attributes [:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry :photo],
+                :byte-valued [:photo]
                 :filter "(uid=userUid)"}}
 
       {:describe "custom attributes"
        :directory {:config {:users-base-dn "dc=lvmh,dc=com"}
                    :schema {:user {:objectclass "user"
-                                   :attributes {:description "desc" :mail "email"}}}}
+                                   :attributes {:description "desc" :mail "email"}
+                                   :binary-attributes {:photo "jpegPhoto"}}}}
        :filter "(&(objectclass=user)(email=user1@lvmh.com))"
        :result {:base-dn "dc=lvmh,dc=com",
-                :attributes [:uid :desc :email :phone :pwdChangedTime :pwdPolicySubentry],
+                :attributes [:uid :desc :email :phone :pwdChangedTime :pwdPolicySubentry :jpegPhoto],
+                :byte-valued [:jpegPhoto]
                 :filter "(&(objectclass=user)(email=user1@lvmh.com))"}})))

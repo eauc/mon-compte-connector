@@ -70,6 +70,9 @@
           "object-class": "person",
           "attributes": {
             "phone": "mobile"
+          },
+          "binary-attributes": {
+            "photo": "jpegPhoto"
           }
         },
         "pwd-policy": {}
