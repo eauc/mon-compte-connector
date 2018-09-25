@@ -2,5 +2,5 @@ https://www.linode.com/docs/security/ssl/install-lets-encrypt-to-create-ssl-cert
 
 ** TODO
 
-- validate config
-- cleanup exception handling in routes
+- cleanup exception handling in routes (return JSON)
+- import/export ca certificates dynamically

@@ -9,6 +9,7 @@
                  [cheshire "5.8.0"]
                  [compojure "1.6.1"]
                  [environ "1.1.0"]
+                 [expound "0.7.1"]
                  [integrant "0.6.3"]
                  [lock-key "1.5.0"]
                  [one-time "0.4.0"]
@@ -24,7 +25,6 @@
   :profiles {:dev {:env {:debug true}
                    :source-paths ["dev" "test"]
                    :dependencies [[eftest "0.5.3"]
-                                  [expound "0.7.1"]
                                   [orchestra "2018.08.19-1"]
                                   [org.clojure/tools.namespace "0.2.11"]]}
              :repl {}
