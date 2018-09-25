@@ -22,7 +22,7 @@
             [lein-environ "1.1.0"]
             [lein-pprint "1.2.0"]
             [refactor-nrepl "2.4.0-SNAPSHOT"]]
-  :profiles {:dev {:env {:debug true}
+  :profiles {:dev {:env {:dev true}
                    :source-paths ["dev" "test"]
                    :dependencies [[eftest "0.5.3"]
                                   [orchestra "2018.08.19-1"]

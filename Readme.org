@@ -2,5 +2,6 @@ https://www.linode.com/docs/security/ssl/install-lets-encrypt-to-create-ssl-cert
 
 ** TODO
 
-- cleanup exception handling in routes (return JSON)
 - import/export ca certificates dynamically
+- validate routes with swagger ?
+- forward id headers to admin

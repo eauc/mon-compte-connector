@@ -6,11 +6,11 @@
 
 (defn println
   [& args]
-  (when (env :debug)
+  (when (env :dev)
     (apply clojure.core/println args)))
 
 
 (defn pprint
   [& args]
-  (when (env :debug)
+  (when (env :dev)
     (apply pp/pprint args)))
