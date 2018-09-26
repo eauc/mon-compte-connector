@@ -6,72 +6,69 @@
 :user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
 :device-uid = yrn8932n7m0rx49t048x80t35300
 :token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjc3NDE0OX0.6-NiY8RbLLW5i6gecyt1ldpzB99M4VVLD8gSueCd-fs
+:base_headers = <<
+Content-Type: application/json
+X-MyAccountApp-Build-ID: #appVersionSnapshot
+X-MyAccountApp-Device-ID: :device-uid
+#
 
 # API version
 
 GET :base_url/
-Content-Type: application/json
+:base_headers
 
 # API description
 
 GET :base_url/v1
-Content-Type: application/json
+:base_headers
 
 # Create auth token
 
 POST :base_url/v1/auth/token
-Content-Type: application/json
+:base_headers
 Authorization: Basic :user_basic
-X-MyAccountApp-Device-ID: :device-uid
 
 # Create auth token - mail invalid
 
 POST :base_url/v1/auth/token
-Content-Type: application/json
+:base_headers
 Authorization: Basic dXNlcjGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
-X-MyAccountApp-Device-ID: :device-uid
 
 # Create auth token - not found
 
 POST :base_url/v1/auth/token
-Content-Type: application/json
+:base_headers
 Authorization: Basic dXNlckBkb21haW4xLmNvbTpQYXNzd29yZDEx
-X-MyAccountApp-Device-ID: :device-uid
 
 # Create auth token - invalid credentials
 
 POST :base_url/v1/auth/token
-Content-Type: application/json
+:base_headers
 Authorization: Basic dXNlcjExQGRvbWFpbjEuY29tOlBhc3JkMTE=
-X-MyAccountApp-Device-ID: :device-uid
 
 # Get user info
 
 GET :base_url/v1/me
-Content-Type: application/json
+:base_headers
 Authorization: Bearer :token
-X-MyAccountApp-Device-ID: :device-uid
 
 # Get user info - invalid auth header
 
 GET :base_url/v1/me
-Content-Type: application/json
+:base_headers
 Authorization: toto
-X-MyAccountApp-Device-ID: :device-uid
 
 # Get user info - invalid token
 
 GET :base_url/v1/me
-Content-Type: application/json
+:base_headers
 Authorization: Bearer nciwpinuicpuivhfyuvh
-X-MyAccountApp-Device-ID: :device-uid
 
 # Change user password
 
 PUT :base_url/v1/me/password
-Content-Type: application/json
+:base_headers
 Authorization: Bearer :token
-X-MyAccountApp-Device-ID: :device-uid
 
 {
   "oldPassword": "Password11",
@@ -81,9 +78,8 @@ X-MyAccountApp-Device-ID: :device-uid
 # Change user password - invalid auth header
 
 PUT :base_url/v1/me/password
-Content-Type: application/json
+:base_headers
 Authorization: toto
-X-MyAccountApp-Device-ID: :device-uid
 
 {
   "oldPassword": "Password11",
@@ -93,9 +89,8 @@ X-MyAccountApp-Device-ID: :device-uid
 # Change user password - invalid token
 
 PUT :base_url/v1/me/password
-Content-Type: application/json
+:base_headers
 Authorization: Bearer nciwpinuicpuivhfyuvh
-X-MyAccountApp-Device-ID: :device-uid
 
 {
   "oldPassword": "Password11",
@@ -105,18 +100,16 @@ X-MyAccountApp-Device-ID: :device-uid
 # Change user password - missing password
 
 PUT :base_url/v1/me/password
-Content-Type: application/json
+:base_headers
 Authorization: Bearer :token
-X-MyAccountApp-Device-ID: :device-uid
 
 {}
 
 # Change user password - invalid old password
 
 PUT :base_url/v1/me/password
-Content-Type: application/json
+:base_headers
 Authorization: Bearer :token
-X-MyAccountApp-Device-ID: :device-uid
 
 {
   "oldPassword": "toto",
@@ -126,9 +119,8 @@ X-MyAccountApp-Device-ID: :device-uid
 # Change user password - invalid new password
 
 PUT :base_url/v1/me/password
-Content-Type: application/json
+:base_headers
 Authorization: Bearer :token
-X-MyAccountApp-Device-ID: :device-uid
 
 {
   "oldPassword": "NewPassword11",
@@ -138,8 +130,7 @@ X-MyAccountApp-Device-ID: :device-uid
 # Get Reset code
 
 POST :base_url/v1/reset/code
-Content-Type: application/json
-X-MyAccountApp-Device-ID: :device-uid
+:base_headers
 
 {
   "mail": "user22@domain2.com"
@@ -148,8 +139,7 @@ X-MyAccountApp-Device-ID: :device-uid
 # Get Reset code - not found
 
 POST :base_url/v1/reset/code
-Content-Type: application/json
-X-MyAccountApp-Device-ID: :device-uid
+:base_headers
 
 {
   "mail": "undefined@domain2.com"
@@ -158,8 +148,7 @@ X-MyAccountApp-Device-ID: :device-uid
 # Get OTT
 
 POST :base_url/v1/reset/token
-Content-Type: application/json
-X-MyAccountApp-Device-ID: :device-uid
+:base_headers
 
 {
   "mail": "user22@domain2.com",
@@ -169,8 +158,7 @@ X-MyAccountApp-Device-ID: :device-uid
 # Reset password
 
 POST :base_url/v1/reset/password
-Content-Type: application/json
-X-MyAccountApp-Device-ID: :device-uid
+:base_headers
 
 {
   "mail": "user22@domain2.com",

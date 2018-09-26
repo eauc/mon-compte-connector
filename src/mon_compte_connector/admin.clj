@@ -3,16 +3,20 @@
   (:require [clojure.pprint :refer [pprint]]
             [clj-http.client :as client]
             [clojure.tools.logging :as log]
+            [environ.core :refer [env]]
             [integrant.core :as ig]
             [mon-compte-connector.debug :as dbg]
             [mon-compte-connector.result :as r]))
 
 
 (defn -send
-  [params path {:keys [base-url certs] :as admin}]
+  [params path {:keys [base-url certs headers] :as admin}]
   (let [url (str base-url "/v1" path)
         {:keys [keystore keystore-pass trust-store]} certs
-        request {:form-params params
+        {:keys [build-id]
+         :or {build-id "x-myaccountconnector-build-id"}} headers
+        request {:headers {build-id (env :version)}
+                 :form-params params
                  :content-type :json
                  :as :json
                  :keystore keystore
@@ -40,7 +44,7 @@
   (send-reset-code [this reset-code] "Send reset code request"))
 
 
-(defrecord Admin [base-url certs secret]
+(defrecord Admin [base-url certs headers]
   AdminAPI
   (register [this] (-send {} "/connectors/register" this))
   (send-log [this log] (-send log "/connectors/log" this))
@@ -48,7 +52,7 @@
   (send-reset-code [this reset-code] (-send reset-code "/reset/code" this)))
 
 
-(defmethod ig/init-key :admin [_ {:keys [base-url certs] :as config}]
+(defmethod ig/init-key :admin [_ {:keys [base-url headers certs] :as config}]
   (when (nil? base-url)
     (throw (ex-info "No AdminAPI URL defined in config" {:admin-config config})))
-  (Admin. base-url (:client certs) "mySecret"))
+  (Admin. base-url (:client certs) headers))

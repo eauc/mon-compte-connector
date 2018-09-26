@@ -6,5 +6,4 @@ https://www.linode.com/docs/security/ssl/install-lets-encrypt-to-create-ssl-cert
 - validate routes with swagger ?
 - add build header to admin
 - forward app-id/build headers to admin
-- lein-git-version
 - update-user route
