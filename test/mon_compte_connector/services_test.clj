@@ -12,14 +12,14 @@
 
 (defrecord MockAdmin [calls responses]
   AdminAPI
-  (send-log [this log]
-    (swap! calls update :send-log (fnil conj []) [log])
+  (send-log [this log headers]
+    (swap! calls update :send-log (fnil conj []) [log headers])
     (:send-log (:responses this)))
-  (send-notification [this log]
-    (swap! calls update :send-notification (fnil conj []) [log])
+  (send-notification [this log headers]
+    (swap! calls update :send-notification (fnil conj []) [log headers])
     (:send-notification (:responses this)))
-  (send-reset-code [this log]
-    (swap! calls update :send-reset-code (fnil conj []) [log])
+  (send-reset-code [this log headers]
+    (swap! calls update :send-reset-code (fnil conj []) [log headers])
     (:send-reset-code (:responses this))))
 
 
@@ -75,6 +75,7 @@
                        :token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJ1aWQiOiJ1czExIiwiZXhwIjo1Mjk2NDY2MTJ9.Dh3-cxBfk9fvo0CqzU2Qzpns97RQJTXIFsJhBUdDwUI"}}
                (user-login {:mail "user1@domain1.com"
                             :pwd "userPass"
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options))
             "invalid domain")
 
@@ -87,7 +88,9 @@
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
                   :type "login",
-                  :passwordExpirationDate "2018-08-26T14:32:29Z"}]]
+                  :passwordExpirationDate "2018-08-26T14:32:29Z"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should register notification")))
 
@@ -102,6 +105,7 @@
                        :messages ["mail format is invalid"]}}
                (user-login {:mail "user1@domain1."
                             :pwd "userPass"
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options))
             "should rejects request")
 
@@ -109,7 +113,9 @@
                   :messages ["mail format is invalid"],
                   :domain "N/A",
                   :deviceUid "#deviceUid1",
-                  :type "login"}]]
+                  :type "login"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log invalid mail format")))
 
@@ -118,8 +124,8 @@
             admin (MockAdmin. calls {})
             pool (MockPool. calls {:authenticated-user
                                    (r/create nil ["User not found"
-                                              "connection error"
-                                              "User not found"])})
+                                                  "connection error"
+                                                  "User not found"])})
             options {:auth-options {} :admin admin :pool pool}]
 
         (is (= {:status 500,
@@ -127,6 +133,7 @@
                        :messages ["internal server error"]}}
                (user-login {:mail "user1@domain1.com"
                             :pwd "userPass"
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options))
             "should rejects request")
 
@@ -134,7 +141,9 @@
                   :messages ["User not found" "connection error" "User not found"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "login"}]]
+                  :type "login"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log invalid mail format"))))
 
@@ -156,6 +165,7 @@
                        :messages [],
                        :user test-user-response}}
                (user-info {:token token
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "OK",
@@ -163,7 +173,9 @@
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
                   :type "refresh",
-                  :passwordExpirationDate "2018-08-26T14:32:29Z"}]]
+                  :passwordExpirationDate "2018-08-26T14:32:29Z"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should refresh notification")))
 
@@ -178,13 +190,16 @@
                 :body {:status "Unauthorized",
                        :messages ["invalid credentials"]}}
                (user-info {:token "invalid"
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["Message seems corrupt or manipulated."],
                   :domain "N/A",
                   :deviceUid "#deviceUid1",
-                  :type "refresh"}]]
+                  :type "refresh"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log error")))
 
@@ -203,13 +218,16 @@
                 :body {:status "Unauthorized",
                        :messages ["invalid credentials"]}}
                (user-info {:token token
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["User not found"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "refresh"}]]
+                  :type "refresh"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log error"))))
 
@@ -230,6 +248,7 @@
                        :messages [],
                        :code 342117}}
                (reset-code {:mail "user1@domain1.com"
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "OK",
@@ -237,7 +256,9 @@
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
                   :phone "+3312345678",
-                  :code 342117}]]
+                  :code 342117}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-reset-code @calls))
             "sould request to send code")))
 
@@ -245,7 +266,7 @@
       (let [calls (atom {})
             admin (MockAdmin. calls {})
             pool (MockPool. calls {:user (r/create nil ["User not found"
-                                                    "connection error"])})
+                                                        "connection error"])})
             options {:auth-options {:time-step 300
                                     :date (Date. 0)
                                     :store (atom {})
@@ -256,12 +277,15 @@
                 :body {:status "InternalServerError",
                        :messages ["internal server error"]}}
                (reset-code {:mail "user1@domain1."
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["mail format is invalid"],
                   :domain "N/A",
-                  :deviceUid "#deviceUid1"}]]
+                  :deviceUid "#deviceUid1"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-reset-code @calls))
             "should log error")))
 
@@ -269,7 +293,7 @@
       (let [calls (atom {})
             admin (MockAdmin. calls {})
             pool (MockPool. calls {:user (r/create nil ["User not found"
-                                                    "connection error"])})
+                                                        "connection error"])})
             options {:auth-options {:time-step 300
                                     :date (Date. 0)
                                     :store (atom {})
@@ -280,13 +304,16 @@
                 :body {:status "InternalServerError",
                        :messages ["internal server error"]}}
                (reset-code {:mail "user1@domain1.com"
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["User not found"
                              "connection error"],
                   :domain "domain1.com",
-                  :deviceUid "#deviceUid1"}]]
+                  :deviceUid "#deviceUid1"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-reset-code @calls))
             "should log error"))))
 
@@ -313,13 +340,16 @@
                        :token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"}}
                (reset-token {:mail "user1@domain1.com"
                              :code 342117
+                             :app-build-id "#appBuildId1"
                              :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "OK",
                   :messages [],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "resetToken"}]]
+                  :type "resetToken"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-log @calls))
             "should log success")))
 
@@ -343,13 +373,16 @@
                        :messages ["Code is invalid"]}}
                (reset-token {:mail "user1@domain1.com"
                              :code 123456
+                             :app-build-id "#appBuildId1"
                              :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["Code is invalid"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "resetToken"}]]
+                  :type "resetToken"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-log @calls))
             "should log error"))))
 
@@ -373,6 +406,7 @@
                (reset-pwd {:mail "user1@domain1.com"
                            :new-pwd "newPass"
                            :token token
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= {:status 401,
@@ -381,6 +415,7 @@
                (reset-pwd {:mail "user1@domain1.com"
                            :new-pwd "newPass"
                            :token token
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= [["user1@domain1.com" "newPass"]]
@@ -392,12 +427,16 @@
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
                   :type "passwordReset"
-                  :passwordExpirationDate "2018-08-26T14:32:29Z"}]
+                  :passwordExpirationDate "2018-08-26T14:32:29Z"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]
                 [{:status "Error",
                   :messages ["One-time token is invalid"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "passwordReset"}]]
+                  :type "passwordReset"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -419,13 +458,16 @@
                (reset-pwd {:mail "user1@domain1.com"
                            :new-pwd "newPass"
                            :token "invalid"
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["Message seems corrupt or manipulated."],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "passwordReset"}]]
+                  :type "passwordReset"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -447,13 +489,16 @@
                (reset-pwd {:mail "user1@domain1.com"
                            :new-pwd "newPass"
                            :token token
+                           :app-build-id "#appBuildId1"
                            :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["connection error"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "passwordReset"}]]
+                  :type "passwordReset"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log success"))))
 
@@ -482,6 +527,7 @@
                (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token token
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "OK",
@@ -489,7 +535,9 @@
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
                   :type "passwordChange",
-                  :passwordExpirationDate "2018-08-26T14:32:29Z"}]]
+                  :passwordExpirationDate "2018-08-26T14:32:29Z"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -510,13 +558,16 @@
                (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token "invalid"
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["Message seems corrupt or manipulated."],
                   :domain "N/A",
                   :deviceUid "#deviceUid1",
-                  :type "passwordChange"}]]
+                  :type "passwordChange"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log success")))
 
@@ -525,7 +576,7 @@
             admin (MockAdmin. calls {})
             pool (MockPool. calls {:user-pwd-update
                                    (r/create nil
-                                     ["Password does not pass the quality checks"])})
+                                             ["Password does not pass the quality checks"])})
             token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
             options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
                                     :secret "mySecret"
@@ -539,12 +590,15 @@
                (change-pwd {:old-pwd "oldPass"
                             :new-pwd "newPass"
                             :token token
+                            :app-build-id "#appBuildId1"
                             :device-uid "#deviceUid1"} options)))
 
         (is (= [[{:status "Error",
                   :messages ["Password does not pass the quality checks"],
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
-                  :type "passwordChange"}]]
+                  :type "passwordChange"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))
             "should log success")))))

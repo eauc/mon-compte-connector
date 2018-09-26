@@ -10,7 +10,7 @@
 
 
 (defn user-login
-  [{:keys [mail pwd device-uid]} {:keys [admin auth-options pool]}]
+  [{:keys [mail pwd app-build-id device-uid]} {:keys [admin auth-options pool]}]
   (let [domain? (util/domain mail)
         result? (err-> (if (r/ok? domain?) (r/just pool) domain?)
                        (dir/authenticated-user mail pwd)
@@ -20,7 +20,9 @@
                            :type "login"
                            :domain (or (r/value domain?) "N/A")
                            :device-uid device-uid})
-        (#(adm/send-notification admin %)))
+        (#(adm/send-notification admin %
+                                 {:app-build-id app-build-id
+                                  :app-device-id device-uid})))
     (res/user-token result?)))
 
 
@@ -30,7 +32,7 @@
 
 
 (defn user-info
-  [{:keys [token device-uid]} {:keys [admin auth-options pool]}]
+  [{:keys [token app-build-id device-uid]} {:keys [admin auth-options pool]}]
   (let [mail? (err-> (auth/user-claim token auth-options)
                      (#(r/just (:mail %))))
         domain? (err-> mail? (util/domain))
@@ -41,24 +43,28 @@
         (evl/notification {:type "refresh"
                            :domain (or (r/value domain?) "N/A")
                            :device-uid device-uid})
-        (#(adm/send-notification admin %)))
+        (#(adm/send-notification admin %
+                                 {:app-build-id app-build-id
+                                  :app-device-id device-uid})))
     (res/user-info result?)))
 
 
 (defn reset-code
-  [{:keys [mail device-uid]} {:keys [admin auth-options pool]}]
+  [{:keys [mail app-build-id device-uid]} {:keys [admin auth-options pool]}]
   (let [domain? (util/domain mail)
         result? (err-> (dir/user pool #(dir/user-mail-filter % mail))
                        (auth/user-code auth-options))]
     (-> (if-not (r/ok? domain?) domain? result?)
         (evl/reset-code {:domain (or (r/value domain?) "N/A")
                          :device-uid device-uid})
-        (#(adm/send-reset-code admin %)))
+        (#(adm/send-reset-code admin %
+                               {:app-build-id app-build-id
+                                :app-device-id device-uid})))
     (res/user-code result?)))
 
 
 (defn reset-token
-  [{:keys [mail code device-uid]} {:keys [admin auth-options pool]}]
+  [{:keys [mail code app-build-id device-uid]} {:keys [admin auth-options pool]}]
   (let [domain? (util/domain mail)
         result? (err-> (auth/user-code-valid? mail code (:code auth-options))
                        (auth/one-time-token (:token auth-options)))]
@@ -66,12 +72,14 @@
         (evl/event-log {:type "resetToken"
                         :domain (or (r/value domain?) "N/A")
                         :device-uid device-uid})
-        (#(adm/send-log admin %)))
+        (#(adm/send-log admin %
+                        {:app-build-id app-build-id
+                         :app-device-id device-uid})))
     (res/user-ott result?)))
 
 
 (defn reset-pwd
-  [{:keys [mail token new-pwd device-uid]} {:keys [admin auth-options pool]}]
+  [{:keys [mail token new-pwd app-build-id device-uid]} {:keys [admin auth-options pool]}]
   (let [domain? (util/domain mail)
         claim? (auth/one-time-claim mail token auth-options)
         result? (err-> claim?
@@ -81,12 +89,14 @@
         (evl/notification {:type "passwordReset"
                            :domain (or (r/value domain?) "N/A")
                         :device-uid device-uid})
-        (#(adm/send-notification admin %)))
+        (#(adm/send-notification admin %
+                                 {:app-build-id app-build-id
+                                  :app-device-id device-uid})))
     (res/user-reset-pwd claim? result?)))
 
 
 (defn change-pwd
-  [{:keys [token pwd new-pwd device-uid]} {:keys [admin auth-options pool]}]
+  [{:keys [token pwd new-pwd app-build-id device-uid]} {:keys [admin auth-options pool]}]
   (let [mail? (err-> (auth/user-claim token auth-options)
                      (#(r/just (:mail %))))
         domain? (err-> mail? (util/domain))
@@ -95,5 +105,7 @@
         (evl/notification {:type "passwordChange"
                            :domain (or (r/value domain?) "N/A")
                            :device-uid device-uid})
-        (#(adm/send-notification admin %)))
+        (#(adm/send-notification admin %
+                                 {:app-build-id app-build-id
+                                  :app-device-id device-uid})))
     (res/user-info result?)))
