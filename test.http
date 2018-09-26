@@ -7,6 +7,16 @@
 :device-uid = yrn8932n7m0rx49t048x80t35300
 :token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzNjc3NDE0OX0.6-NiY8RbLLW5i6gecyt1ldpzB99M4VVLD8gSueCd-fs
 
+# API version
+
+GET :base_url/
+Content-Type: application/json
+
+# API description
+
+GET :base_url/v1
+Content-Type: application/json
+
 # Create auth token
 
 POST :base_url/v1/auth/token

@@ -35,6 +35,20 @@
   (let [{auth-code :code auth-token :token} auth]
     (wrap-exception
       (routes
+        (GET "/" []
+             {:status 200
+              :body {:status "OK"
+                     :codeVersion (env :version)
+                     :v1 "./v1"}})
+        (GET "/v1" []
+             {:status 200
+              :body {:status "OK"
+                     :authToken "./auth/token"
+                     :userMe "./me"
+                     :userChangePassword "./me/password"
+                     :resetCode "./reset/code"
+                     :resetToken "./reset/token"
+                     :resetPassword "./reset/password"}})
         (POST "/v1/auth/token" {:keys [identity headers]}
               (svc/user-login {:mail (:mail identity) :pwd (:pwd identity)
                                :device-uid (get headers "x-myaccountapp-device-id")}

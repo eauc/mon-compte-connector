@@ -1,4 +1,4 @@
-(defproject com.amaris.myaccount/connector "1.0.0-SNAPSHOT"
+(defproject com.amaris.myaccount/connector "_"
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojars.pntblnk/clj-ldap "0.0.16"]
                  [org.clojure/tools.cli "0.3.7"]
@@ -20,6 +20,7 @@
   :plugins [[lein-ancient "0.6.15"]
             [lein-eftest "0.5.2"]
             [lein-environ "1.1.0"]
+            [me.arrdem/lein-git-version "2.0.3"]
             [lein-pprint "1.2.0"]
             [refactor-nrepl "2.4.0-SNAPSHOT"]]
   :profiles {:dev {:env {:dev true}
@@ -30,4 +31,10 @@
              :repl {}
              :uberjar {:main mon-compte-connector.core
                        :aot :all}}
-  :repl-options {:init-ns mon-compte-connector.repl})
+  :repl-options {:init-ns mon-compte-connector.repl}
+  :env {:version :project/version}
+  :git-version
+  {:status-to-version
+   (fn [{:keys [tag ref-short ahead? dirty?] :as git}]
+     (let [version (if (and tag (not ahead?)) tag ref-short)]
+       (if dirty? (str version "-SNAPSHOT") version)))})
