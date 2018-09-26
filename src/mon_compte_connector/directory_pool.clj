@@ -39,7 +39,9 @@
   (dir/user-pwd-reset [pool mail new-pwd]
     (on-pool pool dir/user-pwd-reset mail new-pwd))
   (dir/user-pwd-update [pool mail pwd new-pwd]
-    (on-pool pool dir/user-pwd-update mail pwd new-pwd)))
+    (on-pool pool dir/user-pwd-update mail pwd new-pwd))
+  (dir/user-update [pool mail data]
+    (on-pool pool dir/user-update mail data)))
 
 
 (defn close

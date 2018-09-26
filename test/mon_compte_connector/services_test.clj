@@ -36,7 +36,10 @@
     (:user-pwd-reset (:responses this)))
   (user-pwd-update [this mail pwd new-pwd]
     (swap! calls update :user-pwd-update (fnil conj []) [mail pwd new-pwd])
-    (:user-pwd-update (:responses this))))
+    (:user-pwd-update (:responses this)))
+  (user-update [this mail data]
+    (swap! calls update :user-update (fnil conj []) [mail data])
+    (:user-update (:responses this))))
 
 (def test-user
   {:description "This is User11's description",
@@ -598,6 +601,104 @@
                   :domain "domain1.com",
                   :deviceUid "#deviceUid1",
                   :type "passwordChange"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
+               (:send-notification @calls))
+            "should log success"))))
+
+
+  (testing "update-profile"
+    (testing "success"
+      (let [calls (atom {})
+            admin (MockAdmin. calls {})
+            pool (MockPool. calls {:user-update (r/just test-user)})
+            token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
+            options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
+                                    :secret "mySecret"
+                                    :alg :hs256
+                                    :exp-delay (time/seconds 5)}
+                     :admin admin :pool pool}]
+
+        (is (= {:status 200,
+                :body {:status "OK",
+                       :messages [],
+                       :user {:description "This is User11's description",
+                              :mail "user1@domain1.com",
+                              :phoneNumber "+3312345678",
+                              :passwordChangedTime "2018-08-26T12:32:29Z",
+                              :passwordMaxAge 7200,
+                              :passwordExpirationDate "2018-08-26T14:32:29Z"}}}
+               (update-profile {:data {:description "new desc"}
+                                :token token
+                                :app-build-id "#appBuildId1"
+                                :device-uid "#deviceUid1"} options)))
+
+        (is (= [[{:status "OK",
+                  :messages [],
+                  :domain "domain1.com",
+                  :deviceUid "#deviceUid1",
+                  :type "profileUpdate",
+                  :passwordExpirationDate "2018-08-26T14:32:29Z"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
+               (:send-notification @calls))
+            "should log success")))
+
+    (testing "invalid token"
+      (let [calls (atom {})
+            admin (MockAdmin. calls {})
+            pool (MockPool. calls {:user-update (r/just test-user)})
+            token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
+            options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
+                                    :secret "mySecret"
+                                    :alg :hs256
+                                    :exp-delay (time/seconds 5)}
+                     :admin admin :pool pool}]
+
+        (is (= {:status 401,
+                :body {:status "Unauthorized",
+                       :messages ["invalid credentials"]}}
+               (update-profile {:data {:description "new desc"}
+                                :token "invalid"
+                                :app-build-id "#appBuildId1"
+                                :device-uid "#deviceUid1"} options)))
+
+        (is (= [[{:status "Error",
+                  :messages ["Message seems corrupt or manipulated."],
+                  :domain "N/A",
+                  :deviceUid "#deviceUid1",
+                  :type "profileUpdate"}
+                 {:app-build-id "#appBuildId1"
+                  :app-device-id "#deviceUid1"}]]
+               (:send-notification @calls))
+            "should log success")))
+
+    (testing "update failure"
+      (let [calls (atom {})
+            admin (MockAdmin. calls {})
+            pool (MockPool. calls {:user-update
+                                   (r/create nil
+                                             ["Password does not pass the quality checks"])})
+            token "eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjFAZG9tYWluMS5jb20iLCJleHAiOjUyOTY0NjYxMn0.FT9p2O7VXyq7PYdq7V0Us9D-_DYiUahEw_kB0nPS0RU"
+            options {:auth-options {:now (time/date-time 1986 10 14 4 3 27 456)
+                                    :secret "mySecret"
+                                    :alg :hs256
+                                    :exp-delay (time/seconds 5)}
+                     :admin admin :pool pool}]
+
+        (is (= {:status 400,
+                :body {:status "BadRequest",
+                       :messages ["Password does not pass the quality checks"]}}
+               (update-profile {:data {:description "new desc"}
+                                :token token
+                                :app-build-id "#appBuildId1"
+                                :device-uid "#deviceUid1"} options)))
+
+        (is (= [[{:status "Error",
+                  :messages ["Password does not pass the quality checks"],
+                  :domain "domain1.com",
+                  :deviceUid "#deviceUid1",
+                  :type "profileUpdate"}
                  {:app-build-id "#appBuildId1"
                   :app-device-id "#deviceUid1"}]]
                (:send-notification @calls))

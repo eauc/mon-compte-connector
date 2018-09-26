@@ -10,7 +10,8 @@
                     :attributes {:description "description"
                                  :mail "mail"
                                  :phone "mobile"
-                                 :password "userPassword"}})
+                                 :password "userPassword"}
+                    :binary-attributes {:photo "jpegPhoto"}})
 
   (attributes user-schema)
   ;; => {:uid :uid,
@@ -44,4 +45,16 @@
   ;;      :pwdChangedTime
   ;;      :pwdPolicySubentry),
   ;;     :filter "(filter)"}
+
+  (update-query {:dn "user-dn"} user-schema {:phone "+33123456789"})
+;; => [{:dn "user-dn",
+;;      :replace {:mobile "+33123456789"},
+;;      :post-read
+;;      (:uid
+;;       :description
+;;       :mail
+;;       :mobile
+;;       :pwdChangedTime
+;;       :pwdPolicySubentry)}
+;;     nil]
   )

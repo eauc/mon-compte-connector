@@ -62,6 +62,13 @@
                              :device-uid (get headers app-device-id)}
                             {:admin admin :pool directories
                              :auth-options (auth-token)}))
+        (PUT "/v1/me" {:keys [headers params]}
+             (svc/update-profile {:token (auth-header-token headers)
+                                  :data (into {} (map (fn [[k v]] [(keyword k) v]) params))
+                                  :app-build-id (get headers app-build-id)
+                                  :device-uid (get headers app-device-id)}
+                                 {:admin admin :pool directories
+                                  :auth-options (auth-token)}))
         (PUT "/v1/me/password" {:keys [headers params]}
              (svc/change-pwd {:token (auth-header-token headers)
                               :pwd (get params "oldPassword")

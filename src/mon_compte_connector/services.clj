@@ -109,3 +109,19 @@
                                  {:app-build-id app-build-id
                                   :app-device-id device-uid})))
     (res/user-info result?)))
+
+
+(defn update-profile
+  [{:keys [token data app-build-id device-uid]} {:keys [admin auth-options pool]}]
+  (let [mail? (err-> (auth/user-claim token auth-options)
+                     (#(r/just (:mail %))))
+        domain? (err-> mail? (util/domain))
+        result? (err-> mail? (#(dir/user-update pool % data)))]
+    (-> result?
+        (evl/notification {:type "profileUpdate"
+                           :domain (or (r/value domain?) "N/A")
+                           :device-uid device-uid})
+        (#(adm/send-notification admin %
+                                 {:app-build-id app-build-id
+                                  :app-device-id device-uid})))
+    (res/user-info result?)))

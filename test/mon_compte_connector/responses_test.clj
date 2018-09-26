@@ -24,28 +24,28 @@
                       :messages ["invalid credentials"]}}}
 
       {:result? (r/create nil ["User not found"
-                           "Invalid credentials"
-                           "connection error"])
+                               "Invalid credentials"
+                               "connection error"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["invalid credentials"]}}}
 
       {:result? (r/create nil ["User not found"
-                           "Password does not pass quality checks"
-                           "connection error"])
+                               "Password does not pass quality checks"
+                               "connection error"])
        :error {:status 400
                :body {:status "BadRequest"
                       :messages ["Password does not pass quality checks"]}}}
 
       {:result? (r/create nil ["User not found"
-                           "connection error"
-                           "User not found"])
+                               "connection error"
+                               "User not found"])
        :error {:status 500
                :body {:status "InternalServerError"
                       :messages ["internal server error"]}}}
 
       {:result? (r/create nil ["User not found"
-                           "User not found"])
+                               "User not found"])
        :error {:status 401
                :body {:status "Unauthorized"
                       :messages ["invalid credentials"]}}}
@@ -63,7 +63,15 @@
       {:result? (r/create nil ["mail is invalid"])
        :error {:status 401
                :body {:status "Unauthorized"
-                      :messages ["mail is invalid"]}}}))
+                      :messages ["mail is invalid"]}}}
+
+      {:result? (r/create nil ["Unknown data 'toto'"
+                               "connection error"
+                               "Unknown data 'tata'"])
+       :error {:status 400
+               :body {:status "BadRequest"
+                      :messages ["Unknown data 'toto'"
+                                 "Unknown data 'tata'"]}}}))
 
 
   (testing "user-token"

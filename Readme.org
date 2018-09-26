@@ -4,6 +4,6 @@ https://www.linode.com/docs/security/ssl/install-lets-encrypt-to-create-ssl-cert
 
 - import/export ca certificates dynamically
 - validate routes with swagger ?
-- add build header to admin
-- forward app-id/build headers to admin
-- update-user route
+- ecrire convertisseur de conf
+- rajouter les binary-attributes apres reset-pwd/change-pwd/update-profile
+- rajouter token dans reset-pwd reponse

@@ -59,6 +59,14 @@
       (r/just errors))))
 
 
+(defn user-error-update
+  [errors]
+  (let [unknown? (first (filter #(re-find #"Unknown data" %) errors))]
+    (if unknown?
+      (r/create nil [(bad-request (r/create nil (filter #(re-find #"Unknown data" %) errors)))])
+      (r/just errors))))
+
+
 (defn user-error-default
   [errors]
   (r/create nil [(internal-error (r/create nil ["internal server error"]))]))
@@ -72,6 +80,7 @@
                          (user-error-pwd-check)
                          (user-error-invalid)
                          (user-error-credentials)
+                         (user-error-update)
                          (user-error-default))]
     (first (r/logs response?))))
 

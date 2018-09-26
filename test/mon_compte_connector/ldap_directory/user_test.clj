@@ -1,7 +1,9 @@
 (ns mon-compte-connector.ldap-directory.user-test
+  (:import com.unboundid.util.Base64)
   (:require [mon-compte-connector.ldap-directory.user :refer :all]
             [clojure.test :refer [deftest testing is are]]
-            [mon-compte-connector.example :refer [example]]))
+            [mon-compte-connector.example :refer [example]]
+            [mon-compte-connector.result :as r]))
 
 (deftest ldap-directory.user-test
   (testing "attributes"
@@ -118,6 +120,24 @@
               :pwd-policy "cn=pwdPolicy,dn=org,dn=com"}}))
 
 
+  (testing "basic-query"
+    (example
+
+      [directory filter result]
+
+      (= result (basic-query directory filter))
+
+      {:describe "default"
+       :directory {:config {:users-base-dn "dc=amaris,dc=ovh"}
+                   :schema {:user {:objectclass "person"
+                                   :attributes {}
+                                   :binary-attributes {}}}}
+       :filter "(uid=userUid)"
+       :result {:base-dn "dc=amaris,dc=ovh"
+                :attributes [:dn]
+                :filter "(uid=userUid)"}}))
+
+
   (testing "query"
     (example
 
@@ -145,4 +165,48 @@
        :result {:base-dn "dc=lvmh,dc=com",
                 :attributes [:uid :desc :email :phone :pwdChangedTime :pwdPolicySubentry :jpegPhoto],
                 :byte-valued [:jpegPhoto]
-                :filter "(&(objectclass=user)(email=user1@lvmh.com))"}})))
+                :filter "(&(objectclass=user)(email=user1@lvmh.com))"}}))
+
+
+  (testing "update-query"
+    (let [user {:dn "cn=toto,ou=users"}
+          schema {:objectclass "person"
+                  :attributes {}
+                  :binary-attributes {}}
+          data {:description "new desc"
+                :photo "aGVsbG8K"}]
+      (is (= {:dn "cn=toto,ou=users"
+              :replace {:description "new desc"
+                        :photo "aGVsbG8K"}
+              :post-read [:uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry]}
+             (-> (update-query user schema data)
+                 r/value
+                 (update-in [:replace :photo] #(Base64/encode %))))))
+
+    (let [user {:dn "cn=toto,ou=users"}
+          schema {:objectclass "user"
+                  :attributes {:description "desc" :mail "email"}
+                  :binary-attributes {:photo "jpegPhoto"}}
+          data {:description "new desc"
+                :photo "aGVsbG8K"}]
+      (is (= {:dn "cn=toto,ou=users"
+              :replace {:desc "new desc"
+                        :jpegPhoto "aGVsbG8K"}
+              :post-read [:uid :desc :email :phone :pwdChangedTime :pwdPolicySubentry]}
+             (-> (update-query user schema data)
+                 r/value
+                 (update-in [:replace :jpegPhoto] #(Base64/encode %))))))
+
+
+    (let [user {:dn "cn=toto,ou=users"}
+          schema {:objectclass "user"
+                  :attributes {:description "desc" :mail "email"}
+                  :binary-attributes {:photo "jpegPhoto"}}
+          data {:mail "toto@titi.fr"
+                :description "new desc"
+                :password "aGVsbG8K"
+                :unknown "whatever"}]
+      (is (= ["Unknown data key 'unknown'"
+              "Unknown data key 'password'"
+              "Unknown data key 'mail'"]
+             (r/logs (update-query user schema data)))))))

@@ -438,4 +438,66 @@
                            :release-connection (mock calls :release-connection nil)})]
 
           (is (= [nil ["invalid update"]]
-                 (user-pwd-update directory "user1@myDomain.com" "oldPass" "newPass"))))))))
+                 (user-pwd-update directory "user1@myDomain.com" "oldPass" "newPass"))))))
+
+
+    (testing "user-update"
+      (testing "success"
+        (let [calls (atom {})
+              directory (merge
+                          directory-base
+                          {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
+                           :search (mock calls :search
+                                         (r/just
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
+                           :lget (mock calls :lget
+                                       (r/just {:pwdMaxAge "7200"}))
+                           :modify (mock calls :modify
+                                         (r/just
+                                           { :post-read
+                                            {:description "This is John Doe's description",
+                                             :mail "user1@myDomain.com",
+                                             :pwdChangedTime "20180921125506Z",
+                                             :dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                                             :phone "+3312345678"}}))})]
+
+          (is (= [{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                   :description "This is John Doe's description",
+                   :mail "user1@myDomain.com",
+                   :phone "+3312345678",
+                   :pwd-changed-time "2018-09-21T12:55:06Z",
+                   :pwd-max-age 7200,
+                   :pwd-expiration-date "2018-09-21T14:55:06Z"}
+                  []]
+                 (user-update directory "user1@myDomain.com" {:description "new desc"})))
+
+          (is (= [[directory "user1@myDomain.com"]]
+                 (:user-mail-filter @calls))
+              "should build the user mail filter")
+
+          (is (= [[{:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh",
+                    :replace {:description "new desc"},
+                    :post-read
+                    [ :uid :description :mail :phone :pwdChangedTime :pwdPolicySubentry]}
+                   "conn"]]
+                 (:modify @calls))
+              "should try to update the user")))
+
+
+      (testing "update failure"
+        (let [calls (atom {})
+              directory (merge
+                          directory-base
+                          {:user-mail-filter (mock calls :user-mail-filter "user-mail-filter")
+                           :search (mock calls :search
+                                         (r/just
+                                           {:dn "cn=John Doe,ou=Management,dc=amaris,dc=ovh"
+                                            :pwdChangedTime "20180821105506Z"}))
+                           :lget (mock calls :lget
+                                       (r/just {:pwdMaxAge "7200"}))
+                           :modify (mock calls :modify
+                                         (r/create nil ["invalid update"]))})]
+
+          (is (= [nil ["invalid update"]]
+                 (user-update directory "user1@myDomain.com" {:description "new desc"}))))))))

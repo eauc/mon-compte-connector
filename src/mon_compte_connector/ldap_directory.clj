@@ -65,9 +65,10 @@
 
 
 (defn user-pwd-reset
-  [{:keys [schema modify user-mail-filter] :as directory} mail new-pwd]
+  [{:keys [schema modify search user-mail-filter] :as directory} mail new-pwd]
   (let [user-schema (:user schema)]
-    (err-> (user directory (user-mail-filter directory mail))
+    (err-> (r/just (u/basic-query directory (user-mail-filter directory mail)))
+           (search (conn directory) user-not-found)
            (p/reset-query user-schema new-pwd)
            (modify (conn directory))
            (#(r/just (:post-read %)))
@@ -99,11 +100,24 @@
 
 
 (defn user-pwd-update
-  [{:keys [schema user-mail-filter] :as directory} mail pwd new-pwd]
+  [{:keys [schema search user-mail-filter] :as directory} mail pwd new-pwd]
   (let [user-schema (:user schema)]
-    (err-> (user directory (user-mail-filter directory mail))
+    (err-> (r/just (u/basic-query directory (user-mail-filter directory mail)))
+           (search (conn directory) user-not-found)
            (user-connection pwd directory)
            (pwd-update directory new-pwd)
+           (user-with-pwd-expiration-date directory))))
+
+
+(defn user-update
+  [{:keys [schema search modify user-mail-filter] :as directory} mail data]
+  (let [user-schema (:user schema)]
+    (err-> (r/just (u/basic-query directory (user-mail-filter directory mail)))
+           (search (conn directory) user-not-found)
+           (u/update-query user-schema data)
+           (modify (conn directory))
+           (#(r/just (:post-read %)))
+           (u/map-attributes user-schema)
            (user-with-pwd-expiration-date directory))))
 
 
@@ -132,7 +146,9 @@
   (dir/user-pwd-reset [this mail new-pwd]
     (guard-conn user-pwd-reset this mail new-pwd))
   (dir/user-pwd-update [this mail pwd new-pwd]
-    (guard-conn user-pwd-update this mail pwd new-pwd)))
+    (guard-conn user-pwd-update this mail pwd new-pwd))
+  (dir/user-update [this mail data]
+    (guard-conn user-update this mail data)))
 
 
 (defn make-directory
