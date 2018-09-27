@@ -3,7 +3,8 @@
 :base_url = http://localhost:8080
 :user_mail = user11@domain1.com
 :user_pass = Password11
-:user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
+# :user_basic = dXNlcjExQGRvbWFpbjEuY29tOlBhc3N3b3JkMTE=
+:user_basic = bWFpbEBkb21haW4zLmNvbTpBbWFyaXMtMw==
 :device-uid = yrn8932n7m0rx49t048x80t35300
 :token = eyJhbGciOiJIUzI1NiJ9.eyJtYWlsIjoidXNlcjExQGRvbWFpbjEuY29tIiwidWlkIjoidXMxMSIsImV4cCI6MTUzODAwMTA4Mn0.sWI0hL7tiRk3m_n14UEm6bT0c1R_Wlp4sIGvcge9PtM
 :base_headers = <<

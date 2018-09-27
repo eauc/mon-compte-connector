@@ -7,3 +7,5 @@ https://www.linode.com/docs/security/ssl/install-lets-encrypt-to-create-ssl-cert
 - ecrire convertisseur de conf
 - rajouter les binary-attributes apres reset-pwd/change-pwd/update-profile
 - rajouter token dans reset-pwd reponse
+- virer les arguments par defaut
+- exiger les arguments minimum dans la conf

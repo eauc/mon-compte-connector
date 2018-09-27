@@ -1,0 +1,54 @@
+{
+  "server": {
+    "port": 8080,
+    "http?": true,
+    "ssl?": true,
+    "ssl-port": 3443,
+    "client-auth": "none"
+  },
+  "admin": {
+    "base-url": "https://k8s.amaris.ovh:30444"
+  },
+  "auth": {
+    "code": {
+      "time-step": 3600
+    },
+    "token": {
+      "secret": "mySecret",
+      "alg": "hs256",
+      "exp-delay": 3600
+    }
+  },
+  "directories": {
+    "servers": {
+      "server1": {
+        "host": {
+          "address": "10.0.1.11",
+          "port": 389
+        },
+        "ssl?": false,
+        "connect-timeout": 1000,
+        "timeout": 1000,
+        "bind-dn": "CN=Administrator,CN=Users,DC=domain3,DC=com",
+        "password": "AmaAD-3",
+        "users-base-dn": "cn=users,dc=domain3,dc=com",
+        "default-pwd-policy": "CN=passwordDefault,CN=pwpolicies,CN=domain3,CN=com",
+        "schema": "ad"
+      }
+    },
+    "schemas": {
+      "ad": {
+        "user": {
+          "object-class": "person",
+          "ad-password?": true,
+          "attributes": {
+            "password": "unicodePwd"
+          },
+          "binary-attributes": {
+          }
+        },
+        "pwd-policy": {}
+      }
+    }
+  }
+}

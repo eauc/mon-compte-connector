@@ -111,6 +111,9 @@
 (x/def :mcc.config.directory-schema.user/object-class
   ::non-empty-string
   "should be the objectClass of the users entries")
+(x/def :mcc.config.directory-schema.user/ad-password?
+  boolean?
+  "should be boolean indicating whether to update password AD-style")
 (x/def :mcc.config.directory-schema.user/attributes
   (s/map-of keyword? string?)
   "should be a map of aliases to properties names")
@@ -123,7 +126,8 @@
   (s/keys :opt-un [:mcc.config.directory-schema.pwd-policy.attributes/pwd-max-age]))
 (x/def :mcc.config.directory-schema/user
   (s/keys :req-un [:mcc.config.directory-schema.user/object-class]
-          :opt-un [:mcc.config.directory-schema.entry/attributes
+          :opt-un [:mcc.config.directory-schema.entry/ad-password?
+                   :mcc.config.directory-schema.entry/attributes
                    :mcc.config.directory-schema.entry/binary-attributes]))
 (x/def :mcc.config.directory-schema/pwd-policy
   (s/keys :opt-un [:mcc.config.directory-schema.pwd-policy/attributes]))

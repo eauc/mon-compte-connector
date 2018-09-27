@@ -6,6 +6,8 @@
 
 (defn reset-query
   [{:keys [dn] :as user} user-schema new-pwd]
-  (let [user-pwd-key (-> (get-in user-schema [:attributes :password] "userPassword") keyword)]
-    (r/just {:dn dn :replace {user-pwd-key new-pwd}
+  (let [user-pwd-key (-> user-schema (get-in [:attributes :password] "userPassword") keyword)
+        ad-password? (get user-schema :ad-password? false)]
+    (r/just {:dn dn
+             :replace {user-pwd-key (if ad-password? (.getBytes new-pwd "UTF-16LE") new-pwd)}
              :post-read (:attributes (u/read-attributes user-schema))})))

@@ -15,10 +15,19 @@
     (or message raw-message)))
 
 
+(defn log-request
+  [fn args]
+  (let [label (str fn)]
+    (log/info (format "%s request" label) {:args args})
+    (let [result (apply fn args)]
+      (log/info (format "%s result" label) {:result result})
+      result)))
+
+
 (defn catch-error
   [fn & args]
   (try
-    [(apply fn args) nil]
+    [(log-request fn args) nil]
     (catch Exception error
       (log/warn "LDAP request error" {:message (.getMessage error)})
       (r/create nil [(error-message error)]))))
