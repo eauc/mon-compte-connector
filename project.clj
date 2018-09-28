@@ -18,6 +18,7 @@
                  [ring/ring-jetty-adapter "1.6.3"]
                  [ring/ring-json "0.4.0"]]
   :plugins [[lein-ancient "0.6.15"]
+            [lein-cloverage "1.0.13"]
             [lein-eftest "0.5.2"]
             [lein-environ "1.1.0"]
             [me.arrdem/lein-git-version "2.0.3"]
@@ -28,6 +29,15 @@
                    :dependencies [[eftest "0.5.3"]
                                   [orchestra "2018.08.19-1"]
                                   [org.clojure/tools.namespace "0.2.11"]]}
+             :cloverage {:cloverage {:ns-exclude-regex [#"^.*-dev$"
+                                                        #"^.*-test$"
+                                                        #"^mon-compte-connector.app$"
+                                                        #"^mon-compte-connector.cipher$"
+                                                        #"^mon-compte-connector.core$"
+                                                        #"^mon-compte-connector.debug$"
+                                                        #"^mon-compte-connector.ldap$"
+                                                        #"^mon-compte-connector.routes$"
+                                                        #"^mon-compte-connector.server$"]}}
              :repl {}
              :uberjar {:main mon-compte-connector.core
                        :aot :all}}
